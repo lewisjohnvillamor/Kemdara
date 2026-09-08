@@ -55,7 +55,11 @@ impl KemdaraApp {
 
         match received {
             Ok(report) => {
-                let passed = report.results.iter().filter(|result| result.successful).count();
+                let passed = report
+                    .results
+                    .iter()
+                    .filter(|result| result.successful)
+                    .count();
                 self.status = format!(
                     "Complete — {passed}/{} algorithms established matching secrets.",
                     report.results.len()
@@ -151,7 +155,12 @@ impl eframe::App for KemdaraApp {
 }
 
 fn algorithm_overview(ui: &mut egui::Ui) {
-    ui.label(RichText::new("Included adapters").color(INK).strong().size(17.0));
+    ui.label(
+        RichText::new("Included adapters")
+            .color(INK)
+            .strong()
+            .size(17.0),
+    );
     ui.add_space(8.0);
     egui::Grid::new("algorithm_overview")
         .num_columns(3)
@@ -167,8 +176,16 @@ fn algorithm_overview(ui: &mut egui::Ui) {
                 ui.label(info.name);
                 ui.label(info.standard);
                 ui.colored_label(
-                    if info.quantum_resistant { PQ_ACCENT } else { MUTED },
-                    if info.quantum_resistant { "Post-quantum" } else { "Classical" },
+                    if info.quantum_resistant {
+                        PQ_ACCENT
+                    } else {
+                        MUTED
+                    },
+                    if info.quantum_resistant {
+                        "Post-quantum"
+                    } else {
+                        "Classical"
+                    },
                 );
                 ui.end_row();
             }
@@ -203,7 +220,11 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
         .max(1);
 
     for result in &report.results {
-        let color = if result.quantum_resistant { PQ_ACCENT } else { ACCENT };
+        let color = if result.quantum_resistant {
+            PQ_ACCENT
+        } else {
+            ACCENT
+        };
         ui.horizontal(|ui| {
             ui.add_sized(
                 [110.0, 20.0],
@@ -224,7 +245,11 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                 } else {
                     Color32::from_rgb(235, 104, 104)
                 },
-                if result.successful { "verified" } else { "failed" },
+                if result.successful {
+                    "verified"
+                } else {
+                    "failed"
+                },
             );
         });
         ui.add_space(5.0);
