@@ -4,7 +4,7 @@ use std::{
 };
 
 use eframe::egui::{self, Color32, RichText, Stroke};
-use kemdara::{BenchmarkReport, registry, run_benchmarks};
+use kemdara::{BenchmarkReport, ExperimentCategory, Maturity, registry, run_benchmarks};
 
 const INK: Color32 = Color32::from_rgb(225, 232, 240);
 const MUTED: Color32 = Color32::from_rgb(145, 158, 171);
@@ -42,7 +42,7 @@ impl KemdaraApp {
 
         let (sender, receiver) = mpsc::channel();
         self.pending = Some(receiver);
-        self.status = format!("Running {iterations} verified exchanges per algorithm…");
+        self.status = format!("Running up to {iterations} verified workloads per algorithm…");
         std::thread::spawn(move || {
             let _ = sender.send(run_benchmarks(iterations));
         });
@@ -61,7 +61,7 @@ impl KemdaraApp {
                     .filter(|result| result.successful)
                     .count();
                 self.status = format!(
-                    "Complete — {passed}/{} algorithms established matching secrets.",
+                    "Complete — {passed}/{} workloads passed their correctness checks.",
                     report.results.len()
                 );
                 self.report = Some(report);
@@ -101,14 +101,14 @@ impl eframe::App for KemdaraApp {
             .show(ui, |ui| {
                 ui.add_space(10.0);
                 ui.label(
-                    RichText::new("Compare complete key-establishment operations on this machine")
+                    RichText::new("Run verified cryptographic workloads on this machine")
                         .color(INK)
                         .size(20.0)
                         .strong(),
                 );
                 ui.label(
                     RichText::new(
-                        "Each sample includes fresh keys and verifies that both participants derive the same secret.",
+                        "Results are grouped by workload; compare algorithms within a category, not across unlike operations.",
                     )
                     .color(MUTED),
                 );
@@ -143,22 +143,24 @@ impl eframe::App for KemdaraApp {
                         ui.label(RichText::new(&self.status).color(MUTED));
                     });
 
-                ui.add_space(16.0);
-                if let Some(report) = &self.report {
-                    report_view(ui, report);
-                } else {
-                    algorithm_overview(ui);
-                }
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    ui.add_space(16.0);
+                    if let Some(report) = &self.report {
+                        report_view(ui, report);
+                    } else {
+                        algorithm_overview(ui);
+                    }
 
-                ui.add_space(18.0);
-                ui.separator();
-                ui.add_space(8.0);
-                ui.label(
-                    RichText::new(
-                        "Research software only. Results are not a security ranking, and experimental constructions must not protect production traffic.",
-                    )
-                    .color(Color32::from_rgb(232, 174, 92)),
-                );
+                    ui.add_space(18.0);
+                    ui.separator();
+                    ui.add_space(8.0);
+                    ui.label(
+                        RichText::new(
+                            "Research software only. Experimental constructions are isolated and must not protect production traffic.",
+                        )
+                        .color(Color32::from_rgb(232, 174, 92)),
+                    );
+                });
             });
     }
 }
@@ -172,29 +174,27 @@ fn algorithm_overview(ui: &mut egui::Ui) {
     );
     ui.add_space(8.0);
     egui::Grid::new("algorithm_overview")
-        .num_columns(3)
+        .num_columns(4)
         .spacing([28.0, 10.0])
         .striped(true)
         .show(ui, |ui| {
             ui.strong("Algorithm");
             ui.strong("Standard");
-            ui.strong("Class");
+            ui.strong("Category");
+            ui.strong("Maturity");
             ui.end_row();
             for algorithm in registry() {
                 let info = algorithm.info();
                 ui.label(info.name);
                 ui.label(info.standard);
+                ui.label(info.category.label());
                 ui.colored_label(
-                    if info.quantum_resistant {
-                        PQ_ACCENT
+                    if info.maturity == Maturity::Experimental {
+                        Color32::from_rgb(232, 174, 92)
                     } else {
                         MUTED
                     },
-                    if info.quantum_resistant {
-                        "Post-quantum"
-                    } else {
-                        "Classical"
-                    },
+                    info.maturity.label(),
                 );
                 ui.end_row();
             }
@@ -220,53 +220,50 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
     });
     ui.add_space(12.0);
 
-    let max_mean = report
-        .results
-        .iter()
-        .map(|result| result.mean_ns)
-        .max()
-        .unwrap_or(1)
-        .max(1);
+    const CATEGORIES: [ExperimentCategory; 6] = [
+        ExperimentCategory::KeyEstablishment,
+        ExperimentCategory::PayloadEncryption,
+        ExperimentCategory::Hash,
+        ExperimentCategory::KeyDerivation,
+        ExperimentCategory::DigitalSignature,
+        ExperimentCategory::HybridKeyEstablishment,
+    ];
 
-    for result in &report.results {
-        let color = if result.quantum_resistant {
-            PQ_ACCENT
-        } else {
-            ACCENT
-        };
-        ui.horizontal(|ui| {
-            ui.add_sized(
-                [110.0, 20.0],
-                egui::Label::new(RichText::new(result.algorithm).strong()),
-            );
-            let width = (ui.available_width() - 240.0).max(40.0);
-            let fraction = result.mean_ns as f32 / max_mean as f32;
-            let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 14.0), egui::Sense::hover());
-            ui.painter()
-                .rect_filled(rect, 0.0, Color32::from_rgb(38, 47, 58));
-            let filled =
-                egui::Rect::from_min_size(rect.min, egui::vec2(width * fraction, rect.height()));
-            ui.painter().rect_filled(filled, 0.0, color);
-            ui.label(format_duration(result.mean_ns));
-            ui.colored_label(
-                if result.successful {
-                    ACCENT
-                } else {
-                    Color32::from_rgb(235, 104, 104)
-                },
-                if result.successful {
-                    "verified"
-                } else {
-                    "failed"
-                },
-            );
-        });
-        ui.add_space(5.0);
+    for category in CATEGORIES {
+        let category_results: Vec<_> = report.results.iter().filter(|result| result.category == category).collect();
+        if category_results.is_empty() {
+            continue;
+        }
+        let max_mean = category_results.iter().map(|result| result.mean_ns).max().unwrap_or(1).max(1);
+        ui.add_space(10.0);
+        ui.label(RichText::new(category.label()).color(INK).strong());
+        for result in category_results {
+            let color = if result.maturity == Maturity::Experimental {
+                Color32::from_rgb(232, 174, 92)
+            } else if result.quantum_resistant {
+                PQ_ACCENT
+            } else {
+                ACCENT
+            };
+            ui.horizontal(|ui| {
+                ui.add_sized([175.0, 20.0], egui::Label::new(RichText::new(result.algorithm).strong()));
+                let width = (ui.available_width() - 275.0).max(40.0);
+                let fraction = result.mean_ns as f32 / max_mean as f32;
+                let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 14.0), egui::Sense::hover());
+                ui.painter().rect_filled(rect, 0.0, Color32::from_rgb(38, 47, 58));
+                let filled = egui::Rect::from_min_size(rect.min, egui::vec2(width * fraction, rect.height()));
+                ui.painter().rect_filled(filled, 0.0, color);
+                ui.label(format_duration(result.mean_ns));
+                ui.colored_label(if result.successful { ACCENT } else { Color32::from_rgb(235, 104, 104) }, if result.successful { "verified" } else { "failed" });
+            });
+            ui.label(RichText::new(format!("{} · {} samples · {}", result.maturity.label(), result.iterations, result.workload)).color(MUTED).small());
+            ui.add_space(5.0);
+        }
     }
 
     ui.add_space(10.0);
     egui::Grid::new("result_table")
-        .num_columns(5)
+        .num_columns(6)
         .spacing([24.0, 8.0])
         .striped(true)
         .show(ui, |ui| {
@@ -274,6 +271,7 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
             ui.strong("Median");
             ui.strong("P95");
             ui.strong("Ops/sec");
+            ui.strong("Samples");
             ui.strong("Standard");
             ui.end_row();
             for result in &report.results {
@@ -281,6 +279,7 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                 ui.label(format_duration(result.median_ns));
                 ui.label(format_duration(result.p95_ns));
                 ui.label(format!("{:.1}", result.operations_per_second));
+                ui.label(result.iterations.to_string());
                 ui.label(result.standard);
                 ui.end_row();
             }

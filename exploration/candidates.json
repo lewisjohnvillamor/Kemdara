@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "policy": "catalog-only candidates are never loaded by the executable registry",
+  "candidates": [
+    {
+      "id": "x-wing",
+      "category": "hybrid-key-establishment",
+      "status": "internet-draft",
+      "executable": false,
+      "gate": "stable draft, official vectors, cross-implementation test"
+    },
+    {
+      "id": "hqc",
+      "category": "key-establishment",
+      "status": "selected-for-standardization",
+      "executable": false,
+      "gate": "final NIST standard and reviewed implementation"
+    },
+    {
+      "id": "nist-additional-signatures-round-2",
+      "algorithms": ["FAEST", "HAWK", "MAYO", "MQOM", "QR-UOV", "SDitH", "SNOVA", "SQIsign", "UOV"],
+      "category": "digital-signature",
+      "status": "evaluation",
+      "executable": false,
+      "gate": "evaluation progress, stable vectors, independent reviewed implementations"
+    }
+  ]
+}

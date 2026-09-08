@@ -1,7 +1,4 @@
-//! Small adapters around established cryptographic implementations.
-//!
-//! Kemdara deliberately keeps the adapter boundary narrow: one complete key
-//! establishment per call, with both parties' results compared before success.
+//! Registry metadata and adapters for complete, verified crypto workloads.
 
 use ml_kem::{
     MlKem512, MlKem768, MlKem1024,
@@ -10,6 +7,62 @@ use ml_kem::{
 use p256::{ecdh::EphemeralSecret as P256Secret, elliptic_curve::Generate};
 use x25519_dalek::{EphemeralSecret as X25519Secret, PublicKey as X25519PublicKey};
 
+mod digest;
+mod hybrid;
+mod payload;
+mod signatures;
+
+use self::{
+    digest::{BLAKE2S, BLAKE3, HKDF_SHA256, SHA256, SHA384, SHA3_256},
+    hybrid::{P256_MLKEM768, X25519_MLKEM768},
+    payload::{AES128_GCM, AES256_GCM, CHACHA20_POLY1305, XCHACHA20_POLY1305},
+    signatures::{ED25519, MLDSA44, MLDSA65, MLDSA87, P256_ECDSA, SLHDSA_SHAKE128F},
+};
+
+use serde::Serialize;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ExperimentCategory {
+    KeyEstablishment,
+    PayloadEncryption,
+    Hash,
+    KeyDerivation,
+    DigitalSignature,
+    HybridKeyEstablishment,
+}
+
+impl ExperimentCategory {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::KeyEstablishment => "Key establishment",
+            Self::PayloadEncryption => "Payload encryption",
+            Self::Hash => "Hash",
+            Self::KeyDerivation => "Key derivation",
+            Self::DigitalSignature => "Digital signature",
+            Self::HybridKeyEstablishment => "Hybrid key establishment",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Maturity {
+    Standardized,
+    Interoperable,
+    Experimental,
+}
+
+impl Maturity {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Standardized => "Standardized",
+            Self::Interoperable => "Interoperable",
+            Self::Experimental => "Experimental",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct AlgorithmInfo {
     pub id: &'static str,
@@ -17,15 +70,23 @@ pub struct AlgorithmInfo {
     pub family: &'static str,
     pub standard: &'static str,
     pub quantum_resistant: bool,
+    pub category: ExperimentCategory,
+    pub maturity: Maturity,
+    pub workload: &'static str,
+    /// Reduces iterations for unusually expensive full operations.
+    pub iteration_divisor: usize,
     pub summary: &'static str,
 }
 
-pub trait EstablishmentAlgorithm: Sync {
+pub trait CryptoExperiment: Sync {
     fn info(&self) -> AlgorithmInfo;
 
-    /// Run a complete two-party establishment and verify that both sides agree.
+    /// Run the complete workload and perform its category-specific correctness check.
     fn run_once(&self) -> Result<(), String>;
 }
+
+/// Backward-compatible name for the original adapter boundary.
+pub use CryptoExperiment as EstablishmentAlgorithm;
 
 struct X25519Algorithm;
 struct X448Algorithm;
@@ -41,18 +102,36 @@ static ML_KEM_512: MlKem512Algorithm = MlKem512Algorithm;
 static ML_KEM_768: MlKem768Algorithm = MlKem768Algorithm;
 static ML_KEM_1024: MlKem1024Algorithm = MlKem1024Algorithm;
 
-pub fn registry() -> [&'static dyn EstablishmentAlgorithm; 6] {
-    [
+pub fn registry() -> Vec<&'static dyn CryptoExperiment> {
+    vec![
         &X25519,
         &X448,
         &P256,
         &ML_KEM_512,
         &ML_KEM_768,
         &ML_KEM_1024,
+        &AES128_GCM,
+        &AES256_GCM,
+        &CHACHA20_POLY1305,
+        &XCHACHA20_POLY1305,
+        &SHA256,
+        &SHA384,
+        &SHA3_256,
+        &BLAKE2S,
+        &BLAKE3,
+        &HKDF_SHA256,
+        &ED25519,
+        &P256_ECDSA,
+        &MLDSA44,
+        &MLDSA65,
+        &MLDSA87,
+        &SLHDSA_SHAKE128F,
+        &X25519_MLKEM768,
+        &P256_MLKEM768,
     ]
 }
 
-impl EstablishmentAlgorithm for X25519Algorithm {
+impl CryptoExperiment for X25519Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "x25519",
@@ -60,6 +139,10 @@ impl EstablishmentAlgorithm for X25519Algorithm {
             family: "Elliptic-curve Diffie-Hellman",
             standard: "RFC 7748",
             quantum_resistant: false,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "2 keypairs + 2 shared-secret derivations",
+            iteration_divisor: 1,
             summary: "Fast ~128-bit classical security on Curve25519.",
         }
     }
@@ -84,7 +167,7 @@ impl EstablishmentAlgorithm for X25519Algorithm {
     }
 }
 
-impl EstablishmentAlgorithm for X448Algorithm {
+impl CryptoExperiment for X448Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "x448",
@@ -92,6 +175,10 @@ impl EstablishmentAlgorithm for X448Algorithm {
             family: "Elliptic-curve Diffie-Hellman",
             standard: "RFC 7748",
             quantum_resistant: false,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "2 keypairs + 2 shared-secret derivations",
+            iteration_divisor: 1,
             summary: "Higher classical security margin at a larger performance cost.",
         }
     }
@@ -117,7 +204,7 @@ impl EstablishmentAlgorithm for X448Algorithm {
     }
 }
 
-impl EstablishmentAlgorithm for P256Algorithm {
+impl CryptoExperiment for P256Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "p256",
@@ -125,6 +212,10 @@ impl EstablishmentAlgorithm for P256Algorithm {
             family: "Elliptic-curve Diffie-Hellman",
             standard: "NIST SP 800-186",
             quantum_resistant: false,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "2 keypairs + 2 shared-secret derivations",
+            iteration_divisor: 1,
             summary: "Widely interoperable standardized Weierstrass curve.",
         }
     }
@@ -145,7 +236,7 @@ impl EstablishmentAlgorithm for P256Algorithm {
     }
 }
 
-impl EstablishmentAlgorithm for MlKem768Algorithm {
+impl CryptoExperiment for MlKem768Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "ml-kem-768",
@@ -153,6 +244,10 @@ impl EstablishmentAlgorithm for MlKem768Algorithm {
             family: "Module-lattice key encapsulation",
             standard: "FIPS 203",
             quantum_resistant: true,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "keygen + encapsulate + decapsulate",
+            iteration_divisor: 1,
             summary: "NIST-standardized post-quantum key encapsulation.",
         }
     }
@@ -169,7 +264,7 @@ impl EstablishmentAlgorithm for MlKem768Algorithm {
     }
 }
 
-impl EstablishmentAlgorithm for MlKem512Algorithm {
+impl CryptoExperiment for MlKem512Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "ml-kem-512",
@@ -177,6 +272,10 @@ impl EstablishmentAlgorithm for MlKem512Algorithm {
             family: "Module-lattice key encapsulation",
             standard: "FIPS 203",
             quantum_resistant: true,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "keygen + encapsulate + decapsulate",
+            iteration_divisor: 1,
             summary: "Smallest and fastest standardized ML-KEM parameter set.",
         }
     }
@@ -193,7 +292,7 @@ impl EstablishmentAlgorithm for MlKem512Algorithm {
     }
 }
 
-impl EstablishmentAlgorithm for MlKem1024Algorithm {
+impl CryptoExperiment for MlKem1024Algorithm {
     fn info(&self) -> AlgorithmInfo {
         AlgorithmInfo {
             id: "ml-kem-1024",
@@ -201,6 +300,10 @@ impl EstablishmentAlgorithm for MlKem1024Algorithm {
             family: "Module-lattice key encapsulation",
             standard: "FIPS 203",
             quantum_resistant: true,
+            category: ExperimentCategory::KeyEstablishment,
+            maturity: Maturity::Standardized,
+            workload: "keygen + encapsulate + decapsulate",
+            iteration_divisor: 1,
             summary: "Largest standardized ML-KEM parameter set and security margin.",
         }
     }

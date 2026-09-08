@@ -2,16 +2,15 @@
 
 A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. It is intentionally **not** a production protocol implementation.
 
-Initial adapters:
+Executable adapters are grouped by workload:
 
-- X25519 (`x25519-dalek`) — RFC 7748
-- X448 (`crrl`) — RFC 7748
-- NIST P-256 ECDH (`p256`) — SP 800-186 / SP 800-56A
-- ML-KEM-512 (`ml-kem`) — FIPS 203
-- ML-KEM-768 (`ml-kem`) — FIPS 203
-- ML-KEM-1024 (`ml-kem`) — FIPS 203
+- Key establishment: X25519, X448, P-256 ECDH, and ML-KEM-512/768/1024
+- Payload encryption: AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305, and XChaCha20-Poly1305
+- Hash/KDF: SHA-256, SHA-384, SHA3-256, BLAKE2s-256, BLAKE3, and HKDF-SHA-256
+- Signatures: Ed25519, ECDSA P-256, ML-DSA-44/65/87, and SLH-DSA-SHAKE-128f
+- Experimental hybrids: X25519 + ML-KEM-768 and P-256 + ML-KEM-768
 
-The workbench runs the same code on Windows x86-64 and macOS (Intel or Apple Silicon), records machine metadata, verifies exchanges, runs official RFC 7748 known-answer tests for X25519/X448, and displays local benchmark comparisons.
+The workbench runs the same code on Windows x86-64 and macOS (Intel or Apple Silicon), records machine metadata, verifies each complete workload, runs known-answer tests where available, and displays comparisons within each workload category.
 
 > **Safety:** experimental/research software. Do not use custom algorithms or these benchmark wrappers to protect production traffic.
 
@@ -84,16 +83,21 @@ Do not distribute a `target-cpu=native` binary to unrelated machines; use it onl
 
 ## What a benchmark means
 
-The current timing is a deliberately simple **full key-establishment round trip**:
+Each timing is a deliberately complete operation:
 
 - X25519/X448/P-256: generate two ephemeral keypairs and compute both peers' shared secret.
-- ML-KEM-768: keygen + encapsulate + decapsulate.
+- ML-KEM: keygen + encapsulate + decapsulate.
+- AEAD: generate key and nonce, encrypt 64 KiB, decrypt it, and compare the plaintext.
+- Hash: hash a fixed 1 MiB payload.
+- HKDF: extract and expand the RFC 5869 test input and verify the result.
+- Signatures: keygen, sign a 1 KiB message, and verify it.
+- Hybrids: complete the classical exchange and ML-KEM-768, then combine both secrets with a domain-separated HKDF.
 
-These are not identical protocols, so the number is a local research comparison, not a universal claim that one primitive is "better".
+Only compare results inside the same category. The global suite is not a ranking of unlike primitives. Particularly expensive adapters may run fewer samples; every JSON result records its actual sample count and workload.
 
 ## Add an experimental algorithm
 
-Implement `EstablishmentAlgorithm` in `src/algorithms.rs`, give it metadata, a `run_once()` correctness path, and ideally a known-answer test. Then add it to `registry()`.
+Implement `CryptoExperiment`, give it category and maturity metadata, define an honest complete workload, add a correctness path and preferably official vectors, then add it to `registry()`.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the adapter boundary, evidence ladder, and rules that keep experiments separate from production-safe claims.
 
@@ -108,10 +112,10 @@ The intended future order is:
 7. Protocol/network benchmarks
 8. Only then experimental curves/KEMs/hybrid logic
 
+Draft and not-yet-implemented candidates are tracked in [docs/EXPLORATION.md](docs/EXPLORATION.md) and [exploration/candidates.json](exploration/candidates.json). Being listed is not an endorsement and does not make a candidate runnable.
+
 ## Next planned modules
 
-- AES-GCM vs ChaCha20-Poly1305 payload benchmark
-- HKDF/BLAKE2s/SHA-2/SHA-3 comparison
 - Wycheproof importer
 - Noise-style handshake composer
 - toy elliptic-curve visualizer

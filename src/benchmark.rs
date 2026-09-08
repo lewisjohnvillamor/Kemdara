@@ -2,7 +2,10 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 
-use crate::{algorithms::registry, platform::MachineMetadata};
+use crate::{
+    algorithms::{ExperimentCategory, Maturity, registry},
+    platform::MachineMetadata,
+};
 
 #[derive(Clone, Debug, Serialize)]
 pub struct BenchmarkReport {
@@ -21,6 +24,10 @@ pub struct BenchmarkMeasurement {
     pub family: &'static str,
     pub standard: &'static str,
     pub quantum_resistant: bool,
+    pub category: ExperimentCategory,
+    pub maturity: Maturity,
+    pub workload: &'static str,
+    pub iterations: usize,
     pub successful: bool,
     pub mean_ns: u128,
     pub median_ns: u128,
@@ -35,14 +42,15 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
 
     for algorithm in registry() {
         let info = algorithm.info();
-        let mut durations = Vec::with_capacity(iterations);
+        let experiment_iterations = (iterations / info.iteration_divisor.max(1)).max(1);
+        let mut durations = Vec::with_capacity(experiment_iterations);
         let mut error = None;
 
         // Warm up lazy initialization and the hottest code path outside timing.
         if let Err(run_error) = algorithm.run_once() {
             error = Some(run_error);
         } else {
-            for _ in 0..iterations {
+            for _ in 0..experiment_iterations {
                 let start = Instant::now();
                 if let Err(run_error) = algorithm.run_once() {
                     error = Some(run_error);
@@ -53,7 +61,7 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
         }
 
         durations.sort_unstable();
-        let successful = error.is_none() && durations.len() == iterations;
+        let successful = error.is_none() && durations.len() == experiment_iterations;
         let mean_ns = if durations.is_empty() {
             0
         } else {
@@ -73,6 +81,10 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
             family: info.family,
             standard: info.standard,
             quantum_resistant: info.quantum_resistant,
+            category: info.category,
+            maturity: info.maturity,
+            workload: info.workload,
+            iterations: experiment_iterations,
             successful,
             mean_ns,
             median_ns,
@@ -83,7 +95,7 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
     }
 
     BenchmarkReport {
-        schema_version: 1,
+        schema_version: 2,
         generated_unix_ms: SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
