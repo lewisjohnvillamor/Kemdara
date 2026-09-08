@@ -39,10 +39,46 @@ macro_rules! hash_experiment {
     };
 }
 
-hash_experiment!(Sha256Experiment, SHA256, "sha-256", "SHA-256", "SHA-2", "FIPS 180-4", Sha256, "Common 256-bit standardized hash baseline.");
-hash_experiment!(Sha384Experiment, SHA384, "sha-384", "SHA-384", "SHA-2", "FIPS 180-4", Sha384, "SHA-2 with a larger output and security margin.");
-hash_experiment!(Sha3Experiment, SHA3_256, "sha3-256", "SHA3-256", "SHA-3", "FIPS 202", Sha3_256, "Keccak-based standardized alternative to SHA-2.");
-hash_experiment!(Blake2sExperiment, BLAKE2S, "blake2s-256", "BLAKE2s-256", "BLAKE2", "RFC 7693", Blake2s256, "Compact hash optimized for 8- to 32-bit platforms.");
+hash_experiment!(
+    Sha256Experiment,
+    SHA256,
+    "sha-256",
+    "SHA-256",
+    "SHA-2",
+    "FIPS 180-4",
+    Sha256,
+    "Common 256-bit standardized hash baseline."
+);
+hash_experiment!(
+    Sha384Experiment,
+    SHA384,
+    "sha-384",
+    "SHA-384",
+    "SHA-2",
+    "FIPS 180-4",
+    Sha384,
+    "SHA-2 with a larger output and security margin."
+);
+hash_experiment!(
+    Sha3Experiment,
+    SHA3_256,
+    "sha3-256",
+    "SHA3-256",
+    "SHA-3",
+    "FIPS 202",
+    Sha3_256,
+    "Keccak-based standardized alternative to SHA-2."
+);
+hash_experiment!(
+    Blake2sExperiment,
+    BLAKE2S,
+    "blake2s-256",
+    "BLAKE2s-256",
+    "BLAKE2",
+    "RFC 7693",
+    Blake2s256,
+    "Compact hash optimized for 8- to 32-bit platforms."
+);
 
 pub(super) struct Blake3Experiment;
 pub(super) static BLAKE3: Blake3Experiment = Blake3Experiment;
@@ -90,7 +126,9 @@ impl CryptoExperiment for HkdfSha256Experiment {
 
     fn run_once(&self) -> Result<(), String> {
         const IKM: [u8; 22] = [0x0b; 22];
-        const SALT: [u8; 13] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c];
+        const SALT: [u8; 13] = [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+        ];
         const INFO: [u8; 10] = [0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9];
         const EXPECTED: [u8; 42] = [
             0x3c, 0xb2, 0x5f, 0x25, 0xfa, 0xac, 0xd5, 0x7a, 0x90, 0x43, 0x4f, 0x64, 0xd0, 0x36,
@@ -99,7 +137,8 @@ impl CryptoExperiment for HkdfSha256Experiment {
         ];
         let hkdf = Hkdf::<Sha256>::new(Some(&SALT), &IKM);
         let mut output = [0_u8; 42];
-        hkdf.expand(&INFO, &mut output).map_err(|_| "HKDF expansion failed")?;
+        hkdf.expand(&INFO, &mut output)
+            .map_err(|_| "HKDF expansion failed")?;
         if output == EXPECTED {
             Ok(())
         } else {

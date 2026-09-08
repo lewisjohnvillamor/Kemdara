@@ -230,11 +230,20 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
     ];
 
     for category in CATEGORIES {
-        let category_results: Vec<_> = report.results.iter().filter(|result| result.category == category).collect();
+        let category_results: Vec<_> = report
+            .results
+            .iter()
+            .filter(|result| result.category == category)
+            .collect();
         if category_results.is_empty() {
             continue;
         }
-        let max_mean = category_results.iter().map(|result| result.mean_ns).max().unwrap_or(1).max(1);
+        let max_mean = category_results
+            .iter()
+            .map(|result| result.mean_ns)
+            .max()
+            .unwrap_or(1)
+            .max(1);
         ui.add_space(10.0);
         ui.label(RichText::new(category.label()).color(INK).strong());
         for result in category_results {
@@ -246,17 +255,45 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                 ACCENT
             };
             ui.horizontal(|ui| {
-                ui.add_sized([175.0, 20.0], egui::Label::new(RichText::new(result.algorithm).strong()));
+                ui.add_sized(
+                    [175.0, 20.0],
+                    egui::Label::new(RichText::new(result.algorithm).strong()),
+                );
                 let width = (ui.available_width() - 275.0).max(40.0);
                 let fraction = result.mean_ns as f32 / max_mean as f32;
-                let (rect, _) = ui.allocate_exact_size(egui::vec2(width, 14.0), egui::Sense::hover());
-                ui.painter().rect_filled(rect, 0.0, Color32::from_rgb(38, 47, 58));
-                let filled = egui::Rect::from_min_size(rect.min, egui::vec2(width * fraction, rect.height()));
+                let (rect, _) =
+                    ui.allocate_exact_size(egui::vec2(width, 14.0), egui::Sense::hover());
+                ui.painter()
+                    .rect_filled(rect, 0.0, Color32::from_rgb(38, 47, 58));
+                let filled = egui::Rect::from_min_size(
+                    rect.min,
+                    egui::vec2(width * fraction, rect.height()),
+                );
                 ui.painter().rect_filled(filled, 0.0, color);
                 ui.label(format_duration(result.mean_ns));
-                ui.colored_label(if result.successful { ACCENT } else { Color32::from_rgb(235, 104, 104) }, if result.successful { "verified" } else { "failed" });
+                ui.colored_label(
+                    if result.successful {
+                        ACCENT
+                    } else {
+                        Color32::from_rgb(235, 104, 104)
+                    },
+                    if result.successful {
+                        "verified"
+                    } else {
+                        "failed"
+                    },
+                );
             });
-            ui.label(RichText::new(format!("{} · {} samples · {}", result.maturity.label(), result.iterations, result.workload)).color(MUTED).small());
+            ui.label(
+                RichText::new(format!(
+                    "{} · {} samples · {}",
+                    result.maturity.label(),
+                    result.iterations,
+                    result.workload
+                ))
+                .color(MUTED)
+                .small(),
+            );
             ui.add_space(5.0);
         }
     }

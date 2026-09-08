@@ -112,9 +112,30 @@ macro_rules! ml_dsa_experiment {
     };
 }
 
-ml_dsa_experiment!(MlDsa44Experiment, ml_dsa::MlDsa44, "ml-dsa-44", "ML-DSA-44", "Smallest standardized ML-DSA parameter set.", 1);
-ml_dsa_experiment!(MlDsa65Experiment, ml_dsa::MlDsa65, "ml-dsa-65", "ML-DSA-65", "Balanced standardized ML-DSA parameter set.", 1);
-ml_dsa_experiment!(MlDsa87Experiment, ml_dsa::MlDsa87, "ml-dsa-87", "ML-DSA-87", "Largest standardized ML-DSA parameter set.", 1);
+ml_dsa_experiment!(
+    MlDsa44Experiment,
+    ml_dsa::MlDsa44,
+    "ml-dsa-44",
+    "ML-DSA-44",
+    "Smallest standardized ML-DSA parameter set.",
+    1
+);
+ml_dsa_experiment!(
+    MlDsa65Experiment,
+    ml_dsa::MlDsa65,
+    "ml-dsa-65",
+    "ML-DSA-65",
+    "Balanced standardized ML-DSA parameter set.",
+    1
+);
+ml_dsa_experiment!(
+    MlDsa87Experiment,
+    ml_dsa::MlDsa87,
+    "ml-dsa-87",
+    "ML-DSA-87",
+    "Largest standardized ML-DSA parameter set.",
+    1
+);
 
 impl CryptoExperiment for SlhDsaShake128fExperiment {
     fn info(&self) -> AlgorithmInfo {

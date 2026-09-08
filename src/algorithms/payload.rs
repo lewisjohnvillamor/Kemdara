@@ -2,9 +2,7 @@ use aes_gcm::{
     Aes128Gcm, Aes256Gcm, Nonce as AesNonce,
     aead::{Aead, Generate, Key, KeyInit},
 };
-use chacha20poly1305::{
-    ChaCha20Poly1305, Nonce as ChaChaNonce, XChaCha20Poly1305, XNonce,
-};
+use chacha20poly1305::{ChaCha20Poly1305, Nonce as ChaChaNonce, XChaCha20Poly1305, XNonce};
 
 use super::{AlgorithmInfo, CryptoExperiment, ExperimentCategory, Maturity};
 
@@ -49,8 +47,12 @@ impl CryptoExperiment for Aes128GcmExperiment {
         let key = Key::<Aes128Gcm>::generate();
         let cipher = Aes128Gcm::new(&key);
         let nonce = AesNonce::generate();
-        let ciphertext = cipher.encrypt(&nonce, PAYLOAD.as_ref()).map_err(|_| "AES-128-GCM encryption failed")?;
-        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| "AES-128-GCM authentication failed")?;
+        let ciphertext = cipher
+            .encrypt(&nonce, PAYLOAD.as_ref())
+            .map_err(|_| "AES-128-GCM encryption failed")?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| "AES-128-GCM authentication failed")?;
         check_plaintext(&plaintext)
     }
 }
@@ -75,8 +77,12 @@ impl CryptoExperiment for Aes256GcmExperiment {
         let key = Key::<Aes256Gcm>::generate();
         let cipher = Aes256Gcm::new(&key);
         let nonce = AesNonce::generate();
-        let ciphertext = cipher.encrypt(&nonce, PAYLOAD.as_ref()).map_err(|_| "AES-256-GCM encryption failed")?;
-        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| "AES-256-GCM authentication failed")?;
+        let ciphertext = cipher
+            .encrypt(&nonce, PAYLOAD.as_ref())
+            .map_err(|_| "AES-256-GCM encryption failed")?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| "AES-256-GCM authentication failed")?;
         check_plaintext(&plaintext)
     }
 }
@@ -101,8 +107,12 @@ impl CryptoExperiment for ChaCha20Poly1305Experiment {
         let key = chacha20poly1305::Key::generate();
         let cipher = ChaCha20Poly1305::new(&key);
         let nonce = ChaChaNonce::generate();
-        let ciphertext = cipher.encrypt(&nonce, PAYLOAD.as_ref()).map_err(|_| "ChaCha20-Poly1305 encryption failed")?;
-        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| "ChaCha20-Poly1305 authentication failed")?;
+        let ciphertext = cipher
+            .encrypt(&nonce, PAYLOAD.as_ref())
+            .map_err(|_| "ChaCha20-Poly1305 encryption failed")?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| "ChaCha20-Poly1305 authentication failed")?;
         check_plaintext(&plaintext)
     }
 }
@@ -127,8 +137,12 @@ impl CryptoExperiment for XChaCha20Poly1305Experiment {
         let key = chacha20poly1305::Key::generate();
         let cipher = XChaCha20Poly1305::new(&key);
         let nonce = XNonce::generate();
-        let ciphertext = cipher.encrypt(&nonce, PAYLOAD.as_ref()).map_err(|_| "XChaCha20-Poly1305 encryption failed")?;
-        let plaintext = cipher.decrypt(&nonce, ciphertext.as_ref()).map_err(|_| "XChaCha20-Poly1305 authentication failed")?;
+        let ciphertext = cipher
+            .encrypt(&nonce, PAYLOAD.as_ref())
+            .map_err(|_| "XChaCha20-Poly1305 encryption failed")?;
+        let plaintext = cipher
+            .decrypt(&nonce, ciphertext.as_ref())
+            .map_err(|_| "XChaCha20-Poly1305 authentication failed")?;
         check_plaintext(&plaintext)
     }
 }

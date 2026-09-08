@@ -24,7 +24,8 @@ fn combine(classical: &[u8], post_quantum: &[u8]) -> Result<[u8; 32], String> {
     input.extend_from_slice(post_quantum);
     let hkdf = Hkdf::<Sha256>::new(None, &input);
     let mut output = [0_u8; 32];
-    hkdf.expand(LABEL, &mut output).map_err(|_| "hybrid HKDF expansion failed")?;
+    hkdf.expand(LABEL, &mut output)
+        .map_err(|_| "hybrid HKDF expansion failed")?;
     Ok(output)
 }
 
@@ -32,7 +33,10 @@ fn ml_kem_exchange() -> (Vec<u8>, Vec<u8>) {
     let (decapsulation_key, encapsulation_key) = MlKem768::generate_keypair();
     let (ciphertext, sender_shared) = encapsulation_key.encapsulate();
     let receiver_shared = decapsulation_key.decapsulate(&ciphertext);
-    (sender_shared.as_slice().to_vec(), receiver_shared.as_slice().to_vec())
+    (
+        sender_shared.as_slice().to_vec(),
+        receiver_shared.as_slice().to_vec(),
+    )
 }
 
 impl CryptoExperiment for X25519MlKem768Experiment {
