@@ -79,12 +79,15 @@ impl KemdaraApp {
 }
 
 impl eframe::App for KemdaraApp {
-    fn update(&mut self, context: &egui::Context, _frame: &mut eframe::Frame) {
-        self.poll_benchmark(context);
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.poll_benchmark(ui.ctx());
+        ui.painter()
+            .rect_filled(ui.max_rect(), 0.0, Color32::from_rgb(17, 22, 30));
 
-        egui::TopBottomPanel::top("header")
-            .frame(egui::Frame::new().fill(Color32::from_rgb(13, 18, 25)))
-            .show(context, |ui| {
+        egui::Frame::new()
+            .fill(Color32::from_rgb(13, 18, 25))
+            .inner_margin(egui::Margin::symmetric(18, 14))
+            .show(ui, |ui| {
                 ui.add_space(14.0);
                 ui.horizontal(|ui| {
                     ui.heading(RichText::new("KEMDARA").color(ACCENT).strong().size(24.0));
@@ -93,64 +96,70 @@ impl eframe::App for KemdaraApp {
                 ui.add_space(12.0);
             });
 
-        egui::CentralPanel::default().show(context, |ui| {
-            ui.add_space(10.0);
-            ui.label(
-                RichText::new("Compare complete key-establishment operations on this machine")
-                    .color(INK)
-                    .size(20.0)
-                    .strong(),
-            );
-            ui.label(
-                RichText::new(
-                    "Each sample includes fresh keys and verifies that both participants derive the same secret.",
-                )
-                .color(MUTED),
-            );
-            ui.add_space(14.0);
+        egui::Frame::new()
+            .inner_margin(egui::Margin::symmetric(18, 10))
+            .show(ui, |ui| {
+                ui.add_space(10.0);
+                ui.label(
+                    RichText::new("Compare complete key-establishment operations on this machine")
+                        .color(INK)
+                        .size(20.0)
+                        .strong(),
+                );
+                ui.label(
+                    RichText::new(
+                        "Each sample includes fresh keys and verifies that both participants derive the same secret.",
+                    )
+                    .color(MUTED),
+                );
+                ui.add_space(14.0);
 
-            egui::Frame::new()
-                .fill(PANEL)
-                .stroke(Stroke::new(1.0, Color32::from_rgb(48, 59, 72)))
-                .inner_margin(14.0)
-                .show(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label("Iterations per algorithm");
-                        ui.add_enabled(
-                            self.pending.is_none(),
-                            egui::TextEdit::singleline(&mut self.iterations).desired_width(90.0),
-                        );
-                        if ui
-                            .add_enabled(self.pending.is_none(), egui::Button::new("Run suite"))
-                            .clicked()
-                        {
-                            self.start_benchmark();
-                        }
-                        if self.pending.is_some() {
-                            ui.spinner();
-                        }
+                egui::Frame::new()
+                    .fill(PANEL)
+                    .stroke(Stroke::new(1.0, Color32::from_rgb(48, 59, 72)))
+                    .inner_margin(14.0)
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("Iterations per algorithm");
+                            ui.add_enabled(
+                                self.pending.is_none(),
+                                egui::TextEdit::singleline(&mut self.iterations)
+                                    .desired_width(90.0),
+                            );
+                            if ui
+                                .add_enabled(
+                                    self.pending.is_none(),
+                                    egui::Button::new("Run suite"),
+                                )
+                                .clicked()
+                            {
+                                self.start_benchmark();
+                            }
+                            if self.pending.is_some() {
+                                ui.spinner();
+                            }
+                        });
+                        ui.add_space(6.0);
+                        ui.label(RichText::new(&self.status).color(MUTED));
                     });
-                    ui.add_space(6.0);
-                    ui.label(RichText::new(&self.status).color(MUTED));
-                });
 
-            ui.add_space(16.0);
-            if let Some(report) = &self.report {
-                report_view(ui, report);
-            } else {
-                algorithm_overview(ui);
-            }
+                ui.add_space(16.0);
+                if let Some(report) = &self.report {
+                    report_view(ui, report);
+                } else {
+                    algorithm_overview(ui);
+                }
 
-            ui.add_space(18.0);
-            ui.separator();
-            ui.add_space(8.0);
-            ui.label(
-                RichText::new(
-                    "Research software only. Results are not a security ranking, and experimental constructions must not protect production traffic.",
-                )
-                .color(Color32::from_rgb(232, 174, 92)),
-            );
-        });
+                ui.add_space(18.0);
+                ui.separator();
+                ui.add_space(8.0);
+                ui.label(
+                    RichText::new(
+                        "Research software only. Results are not a security ranking, and experimental constructions must not protect production traffic.",
+                    )
+                    .color(Color32::from_rgb(232, 174, 92)),
+                );
+            });
     }
 }
 
@@ -297,8 +306,8 @@ fn configure_style(context: &egui::Context) {
     visuals.widgets.hovered.bg_fill = Color32::from_rgb(42, 91, 87);
     context.set_visuals(visuals);
 
-    let mut style = (*context.style()).clone();
-    style.spacing.item_spacing = egui::vec2(10.0, 8.0);
-    style.spacing.button_padding = egui::vec2(14.0, 8.0);
-    context.set_style(style);
+    context.style_mut_of(egui::Theme::Dark, |style| {
+        style.spacing.item_spacing = egui::vec2(10.0, 8.0);
+        style.spacing.button_padding = egui::vec2(14.0, 8.0);
+    });
 }
