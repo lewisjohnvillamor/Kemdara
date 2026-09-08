@@ -39,6 +39,14 @@ cargo run --release
 
 The first build downloads and compiles the dependencies.
 
+The first usable baseline includes:
+
+- a native `egui`/`eframe` desktop interface (no browser or server required)
+- background benchmark execution so the window remains responsive
+- mean, median, P95, and operations-per-second measurements
+- clear classical vs post-quantum labeling
+- a versioned JSON format for comparing machines later
+
 ## Headless benchmark
 
 Useful when comparing your Windows PC with the spare MacBook:
@@ -84,6 +92,8 @@ These are not identical protocols, so the number is a local research comparison,
 ## Add an experimental algorithm
 
 Implement `EstablishmentAlgorithm` in `src/algorithms.rs`, give it metadata, a `run_once()` correctness path, and ideally a known-answer test. Then add it to `registry()`.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the adapter boundary, evidence ladder, and rules that keep experiments separate from production-safe claims.
 
 The intended future order is:
 
