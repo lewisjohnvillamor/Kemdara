@@ -7,7 +7,9 @@ Initial adapters:
 - X25519 (`x25519-dalek`) — RFC 7748
 - X448 (`crrl`) — RFC 7748
 - NIST P-256 ECDH (`p256`) — SP 800-186 / SP 800-56A
+- ML-KEM-512 (`ml-kem`) — FIPS 203
 - ML-KEM-768 (`ml-kem`) — FIPS 203
+- ML-KEM-1024 (`ml-kem`) — FIPS 203
 
 The workbench runs the same code on Windows x86-64 and macOS (Intel or Apple Silicon), records machine metadata, verifies exchanges, runs official RFC 7748 known-answer tests for X25519/X448, and displays local benchmark comparisons.
 
@@ -108,7 +110,6 @@ The intended future order is:
 
 ## Next planned modules
 
-- ML-KEM-512 / ML-KEM-1024
 - AES-GCM vs ChaCha20-Poly1305 payload benchmark
 - HKDF/BLAKE2s/SHA-2/SHA-3 comparison
 - Wycheproof importer

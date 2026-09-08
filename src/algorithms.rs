@@ -4,7 +4,7 @@
 //! establishment per call, with both parties' results compared before success.
 
 use ml_kem::{
-    MlKem768,
+    MlKem512, MlKem768, MlKem1024,
     kem::{Decapsulate, Encapsulate, Kem},
 };
 use p256::{ecdh::EphemeralSecret as P256Secret, elliptic_curve::Generate};
@@ -30,15 +30,26 @@ pub trait EstablishmentAlgorithm: Sync {
 struct X25519Algorithm;
 struct X448Algorithm;
 struct P256Algorithm;
+struct MlKem512Algorithm;
 struct MlKem768Algorithm;
+struct MlKem1024Algorithm;
 
 static X25519: X25519Algorithm = X25519Algorithm;
 static X448: X448Algorithm = X448Algorithm;
 static P256: P256Algorithm = P256Algorithm;
+static ML_KEM_512: MlKem512Algorithm = MlKem512Algorithm;
 static ML_KEM_768: MlKem768Algorithm = MlKem768Algorithm;
+static ML_KEM_1024: MlKem1024Algorithm = MlKem1024Algorithm;
 
-pub fn registry() -> [&'static dyn EstablishmentAlgorithm; 4] {
-    [&X25519, &X448, &P256, &ML_KEM_768]
+pub fn registry() -> [&'static dyn EstablishmentAlgorithm; 6] {
+    [
+        &X25519,
+        &X448,
+        &P256,
+        &ML_KEM_512,
+        &ML_KEM_768,
+        &ML_KEM_1024,
+    ]
 }
 
 impl EstablishmentAlgorithm for X25519Algorithm {
@@ -153,6 +164,54 @@ impl EstablishmentAlgorithm for MlKem768Algorithm {
 
         if sender_shared != receiver_shared {
             return Err("ML-KEM encapsulation and decapsulation disagreed".into());
+        }
+        Ok(())
+    }
+}
+
+impl EstablishmentAlgorithm for MlKem512Algorithm {
+    fn info(&self) -> AlgorithmInfo {
+        AlgorithmInfo {
+            id: "ml-kem-512",
+            name: "ML-KEM-512",
+            family: "Module-lattice key encapsulation",
+            standard: "FIPS 203",
+            quantum_resistant: true,
+            summary: "Smallest and fastest standardized ML-KEM parameter set.",
+        }
+    }
+
+    fn run_once(&self) -> Result<(), String> {
+        let (decapsulation_key, encapsulation_key) = MlKem512::generate_keypair();
+        let (ciphertext, sender_shared) = encapsulation_key.encapsulate();
+        let receiver_shared = decapsulation_key.decapsulate(&ciphertext);
+
+        if sender_shared != receiver_shared {
+            return Err("ML-KEM-512 encapsulation and decapsulation disagreed".into());
+        }
+        Ok(())
+    }
+}
+
+impl EstablishmentAlgorithm for MlKem1024Algorithm {
+    fn info(&self) -> AlgorithmInfo {
+        AlgorithmInfo {
+            id: "ml-kem-1024",
+            name: "ML-KEM-1024",
+            family: "Module-lattice key encapsulation",
+            standard: "FIPS 203",
+            quantum_resistant: true,
+            summary: "Largest standardized ML-KEM parameter set and security margin.",
+        }
+    }
+
+    fn run_once(&self) -> Result<(), String> {
+        let (decapsulation_key, encapsulation_key) = MlKem1024::generate_keypair();
+        let (ciphertext, sender_shared) = encapsulation_key.encapsulate();
+        let receiver_shared = decapsulation_key.decapsulate(&ciphertext);
+
+        if sender_shared != receiver_shared {
+            return Err("ML-KEM-1024 encapsulation and decapsulation disagreed".into());
         }
         Ok(())
     }

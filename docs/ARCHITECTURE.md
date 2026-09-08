@@ -19,7 +19,7 @@ The UI never calls a cryptographic crate directly. Every candidate implements on
 ## What one sample measures
 
 - X25519, X448, and P-256: generate two ephemeral keypairs, calculate both shared secrets, and compare them.
-- ML-KEM-768: generate a keypair, encapsulate, decapsulate, and compare the shared secrets.
+- ML-KEM-512/768/1024: generate a keypair, encapsulate, decapsulate, and compare the shared secrets.
 
 These operations solve similar key-establishment problems but are not interchangeable. Results only describe this machine, build, dependency set, and measurement definition.
 
