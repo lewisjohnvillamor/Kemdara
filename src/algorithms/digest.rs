@@ -7,7 +7,7 @@ use sha3::Sha3_256;
 
 use super::{AlgorithmInfo, CryptoExperiment, ExperimentCategory, Maturity};
 
-const HASH_PAYLOAD: [u8; 1024 * 1024] = [0x5C; 1024 * 1024];
+static HASH_PAYLOAD: [u8; 1024 * 1024] = [0x5C; 1024 * 1024];
 const HASH_WORKLOAD: &str = "hash 1 MiB fixed payload";
 
 macro_rules! hash_experiment {

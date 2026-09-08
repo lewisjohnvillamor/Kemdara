@@ -6,7 +6,7 @@ use chacha20poly1305::{ChaCha20Poly1305, Nonce as ChaChaNonce, XChaCha20Poly1305
 
 use super::{AlgorithmInfo, CryptoExperiment, ExperimentCategory, Maturity};
 
-const PAYLOAD: [u8; 64 * 1024] = [0xA5; 64 * 1024];
+static PAYLOAD: [u8; 64 * 1024] = [0xA5; 64 * 1024];
 const WORKLOAD: &str = "64 KiB encrypt + decrypt + plaintext check";
 
 pub(super) struct Aes128GcmExperiment;

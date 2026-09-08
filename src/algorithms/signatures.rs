@@ -1,7 +1,6 @@
 use ed25519_dalek::{Signer as _, Verifier as _};
-use ml_dsa::{Generate as _, Keypair as _, Signer as _, Verifier as _};
+use ml_dsa::{Generate as _, Keypair as _};
 use p256::ecdsa::{Signature as P256Signature, SigningKey as P256SigningKey};
-use slh_dsa::signature::{Signer as _, Verifier as _};
 
 use super::{AlgorithmInfo, CryptoExperiment, ExperimentCategory, Maturity};
 
