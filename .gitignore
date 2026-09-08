@@ -1,0 +1,4 @@
+/target
+*.json
+!tests/**/*.json
+.DS_Store
