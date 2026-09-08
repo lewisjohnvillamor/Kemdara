@@ -9,26 +9,31 @@ Native GUI / JSON CLI
           |
 Benchmark runner + machine metadata
           |
-EstablishmentAlgorithm adapter
+CryptoExperiment adapter
           |
 Auditable third-party implementation
 ```
 
-The UI never calls a cryptographic crate directly. Every candidate implements one small adapter with metadata and a complete, self-checking key-establishment operation. This keeps presentation, timing, and primitive-specific code separate.
+The UI never calls a cryptographic crate directly. Every runnable entry implements one small adapter with category, maturity, workload metadata, and a complete self-checking operation. This keeps presentation, timing, and primitive-specific code separate.
 
 ## What one sample measures
 
 - X25519, X448, and P-256: generate two ephemeral keypairs, calculate both shared secrets, and compare them.
 - ML-KEM-512/768/1024: generate a keypair, encapsulate, decapsulate, and compare the shared secrets.
+- AEAD: generate a key and nonce, encrypt and decrypt 64 KiB, and compare the recovered plaintext.
+- Hash: process a fixed 1 MiB payload; known-answer checks remain separate tests.
+- HKDF: perform RFC 5869 extract/expand and compare the output with the official test case.
+- Signatures: generate a keypair, sign 1 KiB, and verify the signature.
+- Experimental hybrids: complete both key-establishment components, combine them with domain-separated HKDF, and compare both parties' output.
 
-These operations solve similar key-establishment problems but are not interchangeable. Results only describe this machine, build, dependency set, and measurement definition.
+Operations from different categories are not comparable. Results only describe this machine, build, dependency set, and measurement definition. Every JSON result records the category, maturity, workload, and actual sample count.
 
 ## Evidence ladder
 
 A candidate moves upward only when the earlier evidence exists:
 
 1. It compiles behind an isolated adapter.
-2. Both peers agree in repeated randomized runs.
+2. The category-specific correctness check passes in repeated runs.
 3. Official known-answer vectors pass.
 4. A second independent implementation agrees.
 5. Adversarial and malformed-input vectors pass.
@@ -42,11 +47,13 @@ Passing the ladder is research evidence, not a claim that a custom construction 
 ## Adding a candidate
 
 1. Prefer a maintained implementation with a clear license and published specification.
-2. Add a zero-sized adapter in `src/algorithms.rs`.
+2. Add a zero-sized adapter in the relevant `src/algorithms/` module.
 3. Return static metadata from `info()`.
-4. Make `run_once()` generate fresh inputs and verify both outputs.
+4. Make `run_once()` execute a complete, documented workload and verify its result.
 5. Add at least one official known-answer test when vectors exist.
 6. Register the adapter in `registry()`.
-7. Record any non-equivalent work included in its benchmark.
+7. Record the workload, maturity, and any iteration divisor in metadata.
+
+Catalog-only candidates live in `exploration/candidates.json`; the executable never loads this file. Promotion into `registry()` requires the admission gate in `docs/EXPLORATION.md`.
 
 Do not mix experimental outputs into production traffic, do not invent performance claims from one machine, and do not call a construction secure because it passes correctness tests.
