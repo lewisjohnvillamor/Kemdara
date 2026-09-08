@@ -20,9 +20,9 @@ jobs:
       - run: cargo test --all-targets --all-features
       - run: cargo check --release --all-features
 
-  cli-smoke:
+  benchmark-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo run --release -- --cli --iterations 1
+      - run: cargo run --release -- --cli --iterations 200
