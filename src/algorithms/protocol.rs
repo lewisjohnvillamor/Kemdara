@@ -166,6 +166,10 @@ mod tests {
         transfer_handshake(&mut initiator, &mut responder, &mut wire, &mut plaintext).unwrap();
         let length = responder.write_message(&[], &mut wire).unwrap();
         wire[length - 1] ^= 1;
-        assert!(initiator.read_message(&wire[..length], &mut plaintext).is_err());
+        assert!(
+            initiator
+                .read_message(&wire[..length], &mut plaintext)
+                .is_err()
+        );
     }
 }
