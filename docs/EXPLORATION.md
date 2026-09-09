@@ -19,6 +19,13 @@ These adapters are not X-Wing, TLS, SSH, HPKE, or another interoperable protocol
 | MAYO / UOV / QR-UOV | Multivariate signature families provide assumption diversity | NIST additional-signature candidates | Require cryptanalytic stability and maintained constant-time implementations |
 | SQIsign | Very compact isogeny-based signatures make an interesting size/CPU tradeoff | NIST additional-signature candidate | Require evaluation progress, robust implementations, and adversarial vectors |
 | SDitH / SNOVA / MQOM | Broaden the signature design space for comparative research | NIST additional-signature candidates | Require stable specs, vectors, and independent implementations |
+| Classic McEliece | Extremely large public keys but a long-studied code-based security assumption | Research candidate; not a Kemdara executable | Require a maintained safe Rust implementation and independent vectors |
+| FrodoKEM | Conservative plain-LWE design without structured lattices | Research candidate; not standardized by NIST | Require stable implementation, vectors, and a clear interoperability target |
+| NTRU Prime / sntrup761 | Different lattice structure and real-world hybrid deployment history | Protocol-specific deployments; not a Kemdara executable | Import authoritative vectors and benchmark the exact protocol construction |
+| BIKE | Compact quasi-cyclic code-based KEM with a very different failure/performance profile | Research candidate | Require current cryptanalytic review and stable constant-time implementation |
+| FROST | Threshold Schnorr signatures expose coordination and multi-party latency tradeoffs | Standardized protocol, not a single primitive timing | Add a protocol runner with network/round metrics rather than a microbenchmark adapter |
+| OPAQUE | Password-authenticated key exchange can be more useful than comparing password hashes alone | Standardized protocol, not a single primitive timing | Add registration/login transcripts and active-attack negative tests |
+| Verifiable delay functions | Deliberately sequential work would invert Kemdara's normal “faster is better” view | Active research family | Select a precise construction, threat model, and independently verifiable implementation |
 
 Primary status references:
 
@@ -40,3 +47,10 @@ A new executable candidate needs all of the following:
 7. Reproducible CI on Windows, macOS, and Linux before benchmark numbers are published.
 
 Kemdara composes reviewed primitives for experiments; it does not invent new curves, permutation functions, or encryption modes.
+
+## Unconventional executable baselines
+
+- Ascon-AEAD128, Ascon-Hash256, and Ascon-XOF128 expose the constrained-device design space standardized in NIST SP 800-232.
+- AES-256-GCM-SIV measures the cost of limiting damage from accidental nonce reuse.
+- KangarooTwelve explores a parallel tree XOF built from reduced-round Keccak.
+- Argon2id and scrypt expose memory cost as a first-class benchmark dimension. Their Kemdara parameters are fixed research profiles, not password-policy advice.

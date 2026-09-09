@@ -23,6 +23,29 @@
       "status": "evaluation",
       "executable": false,
       "gate": "evaluation progress, stable vectors, independent reviewed implementations"
+    },
+    {
+      "id": "alternative-kems",
+      "algorithms": ["Classic McEliece", "FrodoKEM", "NTRU Prime / sntrup761", "BIKE"],
+      "category": "key-establishment",
+      "status": "research-watchlist",
+      "executable": false,
+      "gate": "versioned specification, authoritative vectors, maintained constant-time implementation"
+    },
+    {
+      "id": "multi-party-and-password-protocols",
+      "algorithms": ["FROST", "OPAQUE"],
+      "category": "protocol",
+      "status": "requires-protocol-runner",
+      "executable": false,
+      "gate": "round-aware runner, transcript checks, negative protocol tests"
+    },
+    {
+      "id": "verifiable-delay-functions",
+      "category": "sequential-work",
+      "status": "construction-not-selected",
+      "executable": false,
+      "gate": "precise construction, threat model, independent verifier"
     }
   ]
 }

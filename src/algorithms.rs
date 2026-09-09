@@ -10,12 +10,20 @@ use x25519_dalek::{EphemeralSecret as X25519Secret, PublicKey as X25519PublicKey
 mod digest;
 mod hybrid;
 mod payload;
+mod password;
 mod signatures;
 
 use self::{
-    digest::{BLAKE2S, BLAKE3, HKDF_SHA256, SHA3_256, SHA256, SHA384},
+    digest::{
+        ASCON_HASH256, ASCON_XOF128, BLAKE2S, BLAKE3, HKDF_SHA256, KANGAROO_TWELVE,
+        SHA3_256, SHA256, SHA384,
+    },
     hybrid::{P256_MLKEM768, X25519_MLKEM768},
-    payload::{AES128_GCM, AES256_GCM, CHACHA20_POLY1305, XCHACHA20_POLY1305},
+    payload::{
+        AES128_GCM, AES256_GCM, AES256_GCM_SIV, ASCON_AEAD128, CHACHA20_POLY1305,
+        XCHACHA20_POLY1305,
+    },
+    password::{ARGON2ID, SCRYPT},
     signatures::{ED25519, MLDSA44, MLDSA65, MLDSA87, P256_ECDSA, SLHDSA_SHAKE128F},
 };
 
@@ -28,6 +36,7 @@ pub enum ExperimentCategory {
     PayloadEncryption,
     Hash,
     KeyDerivation,
+    PasswordDerivation,
     DigitalSignature,
     HybridKeyEstablishment,
 }
@@ -39,6 +48,7 @@ impl ExperimentCategory {
             Self::PayloadEncryption => "Payload encryption",
             Self::Hash => "Hash",
             Self::KeyDerivation => "Key derivation",
+            Self::PasswordDerivation => "Password derivation",
             Self::DigitalSignature => "Digital signature",
             Self::HybridKeyEstablishment => "Hybrid key establishment",
         }
@@ -114,12 +124,19 @@ pub fn registry() -> Vec<&'static dyn CryptoExperiment> {
         &AES256_GCM,
         &CHACHA20_POLY1305,
         &XCHACHA20_POLY1305,
+        &AES256_GCM_SIV,
+        &ASCON_AEAD128,
         &SHA256,
         &SHA384,
         &SHA3_256,
         &BLAKE2S,
         &BLAKE3,
+        &ASCON_HASH256,
+        &ASCON_XOF128,
+        &KANGAROO_TWELVE,
         &HKDF_SHA256,
+        &ARGON2ID,
+        &SCRYPT,
         &ED25519,
         &P256_ECDSA,
         &MLDSA44,

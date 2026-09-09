@@ -50,6 +50,16 @@ hash_experiment!(
     "Common 256-bit standardized hash baseline."
 );
 hash_experiment!(
+    AsconHash256Experiment,
+    ASCON_HASH256,
+    "ascon-hash256",
+    "Ascon-Hash256",
+    "Lightweight permutation hash",
+    "NIST SP 800-232",
+    ascon_hash256::AsconHash256,
+    "Lightweight hash standardized for constrained devices."
+);
+hash_experiment!(
     Sha384Experiment,
     SHA384,
     "sha-384",
@@ -105,6 +115,66 @@ impl CryptoExperiment for Blake3Experiment {
     }
 }
 
+pub(super) struct AsconXof128Experiment;
+pub(super) static ASCON_XOF128: AsconXof128Experiment = AsconXof128Experiment;
+
+impl CryptoExperiment for AsconXof128Experiment {
+    fn info(&self) -> AlgorithmInfo {
+        AlgorithmInfo {
+            id: "ascon-xof128",
+            name: "Ascon-XOF128",
+            family: "Lightweight extendable-output function",
+            standard: "NIST SP 800-232",
+            quantum_resistant: true,
+            category: ExperimentCategory::Hash,
+            maturity: Maturity::Standardized,
+            workload: "absorb 1 MiB + squeeze 32 bytes",
+            iteration_divisor: 1,
+            summary: "Ascon extendable-output function with caller-selected output length.",
+        }
+    }
+
+    fn run_once(&self) -> Result<(), String> {
+        let mut xof = ascon_xof128::AsconXof128::default();
+        ascon_xof128::Update::update(&mut xof, &HASH_PAYLOAD);
+        let mut reader = ascon_xof128::ExtendableOutput::finalize_xof(xof);
+        let mut output = [0_u8; 32];
+        ascon_xof128::XofReader::read(&mut reader, &mut output);
+        black_box(output);
+        Ok(())
+    }
+}
+
+pub(super) struct KangarooTwelveExperiment;
+pub(super) static KANGAROO_TWELVE: KangarooTwelveExperiment = KangarooTwelveExperiment;
+
+impl CryptoExperiment for KangarooTwelveExperiment {
+    fn info(&self) -> AlgorithmInfo {
+        AlgorithmInfo {
+            id: "kangaroo-twelve-128",
+            name: "KangarooTwelve-128",
+            family: "Keccak tree XOF",
+            standard: "KangarooTwelve specification",
+            quantum_resistant: true,
+            category: ExperimentCategory::Hash,
+            maturity: Maturity::Interoperable,
+            workload: "absorb 1 MiB + squeeze 32 bytes",
+            iteration_divisor: 1,
+            summary: "Parallelizable reduced-round Keccak tree construction for long inputs.",
+        }
+    }
+
+    fn run_once(&self) -> Result<(), String> {
+        let mut xof = k12::Kt128::default();
+        k12::Update::update(&mut xof, &HASH_PAYLOAD);
+        let mut reader = k12::ExtendableOutput::finalize_xof(xof);
+        let mut output = [0_u8; 32];
+        k12::XofReader::read(&mut reader, &mut output);
+        black_box(output);
+        Ok(())
+    }
+}
+
 pub(super) struct HkdfSha256Experiment;
 pub(super) static HKDF_SHA256: HkdfSha256Experiment = HkdfSha256Experiment;
 
@@ -154,5 +224,11 @@ mod tests {
     #[test]
     fn hkdf_matches_rfc_5869() {
         HKDF_SHA256.run_once().unwrap();
+    }
+
+    #[test]
+    fn unconventional_xofs_complete() {
+        ASCON_XOF128.run_once().unwrap();
+        KANGAROO_TWELVE.run_once().unwrap();
     }
 }

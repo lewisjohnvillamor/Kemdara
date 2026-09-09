@@ -23,6 +23,7 @@ The UI never calls a cryptographic crate directly. Every runnable entry implemen
 - AEAD: generate a key and nonce, encrypt and decrypt 64 KiB, and compare the recovered plaintext.
 - Hash: process a fixed 1 MiB payload; known-answer checks remain separate tests.
 - HKDF: perform RFC 5869 extract/expand and compare the output with the official test case.
+- Password KDFs: derive a key with fixed, recorded memory/time parameters and validate official vectors in tests.
 - Signatures: generate a keypair, sign 1 KiB, and verify the signature.
 - Experimental hybrids: complete both key-establishment components, combine them with domain-separated HKDF, and compare both parties' output.
 

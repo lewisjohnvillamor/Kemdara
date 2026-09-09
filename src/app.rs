@@ -220,11 +220,12 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
     });
     ui.add_space(12.0);
 
-    const CATEGORIES: [ExperimentCategory; 6] = [
+    const CATEGORIES: [ExperimentCategory; 7] = [
         ExperimentCategory::KeyEstablishment,
         ExperimentCategory::PayloadEncryption,
         ExperimentCategory::Hash,
         ExperimentCategory::KeyDerivation,
+        ExperimentCategory::PasswordDerivation,
         ExperimentCategory::DigitalSignature,
         ExperimentCategory::HybridKeyEstablishment,
     ];

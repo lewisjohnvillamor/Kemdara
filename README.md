@@ -5,8 +5,9 @@ A local, cross-platform cryptography experimentation workbench for **learning, v
 Executable adapters are grouped by workload:
 
 - Key establishment: X25519, X448, P-256 ECDH, and ML-KEM-512/768/1024
-- Payload encryption: AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305, and XChaCha20-Poly1305
-- Hash/KDF: SHA-256, SHA-384, SHA3-256, BLAKE2s-256, BLAKE3, and HKDF-SHA-256
+- Payload encryption: AES-GCM, ChaCha20-Poly1305, XChaCha20-Poly1305, AES-256-GCM-SIV, and Ascon-AEAD128
+- Hash/XOF/KDF: SHA-2, SHA-3, BLAKE2s, BLAKE3, Ascon-Hash256/XOF128, KangarooTwelve, and HKDF-SHA-256
+- Password derivation: Argon2id and scrypt with explicit memory/work parameters
 - Signatures: Ed25519, ECDSA P-256, ML-DSA-44/65/87, and SLH-DSA-SHAKE-128f
 - Experimental hybrids: X25519 + ML-KEM-768 and P-256 + ML-KEM-768
 
@@ -90,10 +91,11 @@ Each timing is a deliberately complete operation:
 - AEAD: generate key and nonce, encrypt 64 KiB, decrypt it, and compare the plaintext.
 - Hash: hash a fixed 1 MiB payload.
 - HKDF: extract and expand the RFC 5869 test input and verify the result.
+- Password KDF: derive 32 bytes using the recorded memory, time, and parallelism parameters.
 - Signatures: keygen, sign a 1 KiB message, and verify it.
 - Hybrids: complete the classical exchange and ML-KEM-768, then combine both secrets with a domain-separated HKDF.
 
-Only compare results inside the same category. The global suite is not a ranking of unlike primitives. Particularly expensive adapters may run fewer samples; every JSON result records its actual sample count and workload.
+Only compare results inside the same category. The global suite is not a ranking of unlike primitives. Password KDF parameters are research profiles, not deployment recommendations. Particularly expensive adapters may run fewer samples; every JSON result records its actual sample count and workload.
 
 ## Add an experimental algorithm
 
