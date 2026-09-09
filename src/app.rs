@@ -4,7 +4,9 @@ use std::{
 };
 
 use eframe::egui::{self, Color32, RichText, Stroke};
-use kemdara::{BenchmarkReport, ExperimentCategory, Maturity, registry, run_benchmarks};
+use kemdara::{
+    BenchmarkReport, ExperimentCategory, Maturity, ProtocolTrace, registry, run_benchmarks,
+};
 
 const INK: Color32 = Color32::from_rgb(225, 232, 240);
 const MUTED: Color32 = Color32::from_rgb(145, 158, 171);
@@ -346,6 +348,9 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                             ui.end_row();
                         });
                 });
+            if let Some(protocol) = &result.observation.protocol {
+                protocol_trace_view(ui, result.algorithm_id, protocol);
+            }
             ui.add_space(5.0);
         }
     }
@@ -377,6 +382,93 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                 ui.end_row();
             }
         });
+}
+
+fn protocol_trace_view(ui: &mut egui::Ui, algorithm_id: &str, trace: &ProtocolTrace) {
+    egui::CollapsingHeader::new(format!(
+        "Protocol transcript · {} wire bytes",
+        trace.total_wire_bytes
+    ))
+    .id_salt(("protocol_trace", algorithm_id))
+    .show(ui, |ui| {
+        ui.label(RichText::new(trace.pattern).monospace().color(ACCENT));
+        ui.add_space(4.0);
+        egui::Grid::new(("protocol_summary", algorithm_id))
+            .num_columns(2)
+            .spacing([14.0, 5.0])
+            .show(ui, |ui| {
+                ui.colored_label(ACCENT, "Flights");
+                ui.label(format!(
+                    "{} handshake + {} transport",
+                    trace.handshake_messages, trace.transport_messages
+                ));
+                ui.end_row();
+                ui.colored_label(ACCENT, "Wire cost");
+                ui.label(format!(
+                    "{} B handshake + {} B transport = {} B total",
+                    trace.handshake_wire_bytes,
+                    trace.transport_wire_bytes,
+                    trace.total_wire_bytes
+                ));
+                ui.end_row();
+                ui.colored_label(ACCENT, "Expansion");
+                ui.label(format!(
+                    "{} B beyond {} B of application payload",
+                    trace.expansion_bytes, trace.application_payload_bytes
+                ));
+                ui.end_row();
+                ui.colored_label(PQ_ACCENT, "Authentication");
+                ui.label(trace.authentication);
+                ui.end_row();
+                ui.colored_label(PQ_ACCENT, "Forward secrecy");
+                ui.label(trace.forward_secrecy);
+                ui.end_row();
+                ui.colored_label(PQ_ACCENT, "Identity exposure");
+                ui.label(trace.identity_exposure);
+                ui.end_row();
+            });
+
+        ui.add_space(8.0);
+        ui.label(RichText::new("Flight timeline").strong().color(INK));
+        let largest_flight = trace
+            .events
+            .iter()
+            .map(|event| event.wire_bytes)
+            .max()
+            .unwrap_or(1)
+            .max(1);
+        for event in &trace.events {
+            ui.horizontal(|ui| {
+                ui.add_sized(
+                    [24.0, 18.0],
+                    egui::Label::new(RichText::new(format!("#{}", event.flight)).monospace()),
+                );
+                ui.add_sized(
+                    [152.0, 18.0],
+                    egui::Label::new(RichText::new(event.direction).color(INK)),
+                );
+                ui.add_sized(
+                    [72.0, 18.0],
+                    egui::Label::new(RichText::new(event.phase).color(MUTED)),
+                );
+                ui.add_sized(
+                    [72.0, 18.0],
+                    egui::Label::new(RichText::new(event.tokens).monospace()),
+                );
+                ui.add(
+                    egui::ProgressBar::new(event.wire_bytes as f32 / largest_flight as f32)
+                        .desired_width(180.0)
+                        .text(format!("{} B", event.wire_bytes)),
+                )
+                .on_hover_text(event.security_state);
+            });
+            ui.label(
+                RichText::new(event.security_state)
+                    .small()
+                    .color(MUTED),
+            );
+        }
+    });
 }
 
 fn format_duration(nanoseconds: u128) -> String {

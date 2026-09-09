@@ -1,8 +1,12 @@
 # Kemdara
 
+**Run it. Break it. Measure it. Understand what every cryptographic choice buys you.**
+
 A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. Kemdara runs real implementations and production-shaped protocol scenarios, but it is an educational lab rather than a production security claim. The protocol roadmap is defined in [docs/PRODUCTION_PROTOCOL.md](docs/PRODUCTION_PROTOCOL.md).
 
 Kemdara does not answer “which algorithm is best?” Every choice has a workload, security goal, compatibility boundary, and cost. Results are grouped only where the operations are meaningfully comparable, and each result includes an explicit strength, cost, best fit, and caveat.
+
+Its intended niche is a **cryptography tradeoff laboratory**: the breadth of specialist suites, the approachability of an interactive teaching tool, and enough protocol context to show what a primitive actually buys when it becomes part of a system. Kemdara reuses established implementations and evidence; it does not compete with them or invent a new production wire protocol.
 
 Executable adapters are grouped by workload:
 
@@ -12,7 +16,7 @@ Executable adapters are grouped by workload:
 - Password derivation: Argon2id and scrypt with explicit memory/work parameters
 - Signatures: Ed25519, ECDSA P-256, ML-DSA-44/65/87, and SLH-DSA-SHAKE-128f
 - Experimental hybrids: X25519 + ML-KEM-768 and P-256 + ML-KEM-768
-- Protocol scenarios: Noise NN and Noise XX with a complete handshake and encrypted transport round-trip
+- Protocol scenarios: Noise NN and Noise XX with a complete handshake and two-way encrypted transport exchange
 
 The workbench runs the same code on Windows x86-64 and macOS (Intel or Apple Silicon), records machine metadata, verifies each complete workload, runs known-answer tests where available, and displays comparisons within each workload category.
 
@@ -53,6 +57,8 @@ The first usable baseline includes:
 - mean, median, P95, min/max, standard deviation, coefficient-of-variation noise, and operations-per-second measurements
 - category-normalized latency bars with median/P95 markers and detailed hover readouts
 - expandable learner-facing tradeoff cards for every runnable experiment
+- expandable Noise flight timelines with measured bytes and security state after each message
+- measured handshake, transport, payload, expansion, and total wire bytes in JSON
 - clear classical vs post-quantum labeling
 - a versioned JSON format for comparing machines later
 
@@ -137,13 +143,21 @@ Kemdara is a presentation and integration workbench, not a replacement for speci
 
 See [docs/ECOSYSTEM_GAPS.md](docs/ECOSYSTEM_GAPS.md) for the gap Kemdara is intended to fill.
 
-## Next planned modules
+## Roadmap and priority
 
-- Wycheproof importer
-- TLS 1.3, HPKE, and additional Noise protocol scenarios
-- toy elliptic-curve visualizer
-- result comparison/import between machines
-- custom algorithm plugin folder
+The ordering is deliberate: trustworthy measurements come before controls and comparisons that depend on them.
+
+| Priority | Module | Why it comes here | Status |
+| --- | --- | --- | --- |
+| P0 | Observation contract: transcript and wire size | Makes protocol costs inspectable and gives later modules one versioned data model | First Noise slice implemented |
+| P0 | Peak tracked heap and allocation counts | Adds a reproducible memory view without pretending noisy whole-process RSS is algorithm memory | Next |
+| P1 | Scenario composer | Lets learners change payload, pattern, authentication goal, and network assumptions against the same runner | Planned |
+| P1 | Safe failure laboratory | Demonstrates corruption, replay, nonce reuse, truncation, reordering, and downgrade behavior without exposing reusable attack tooling | Planned |
+| P2 | Windows-versus-Mac report import and comparison | Makes local hardware and implementation tradeoffs visible after the schema is stable | Planned |
+| P2 | Upstream evidence importers | Links local observations to Wycheproof, Noise Explorer, liboqs, and SUPERCOP without duplicating their work | Planned |
+| P3 | More protocol scenarios | Noise NK/IK, HPKE, TLS 1.3, then carefully scoped MLS scenarios | Planned |
+
+Two cross-cutting requirements apply to every phase: the GUI and JSON must show the exact workload, and failure/correctness evidence must never be presented as a security proof. See [docs/ROADMAP.md](docs/ROADMAP.md) for acceptance criteria.
 
 ## License
 

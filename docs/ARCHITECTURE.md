@@ -14,7 +14,7 @@ CryptoExperiment adapter
 Auditable third-party implementation
 ```
 
-The UI never calls a cryptographic crate directly. Every runnable entry implements one small adapter with category, maturity, workload metadata, and a complete self-checking operation. This keeps presentation, timing, and primitive-specific code separate.
+The UI never calls a cryptographic crate directly. Every runnable entry implements one small adapter with category, maturity, workload metadata, and a complete self-checking operation. This keeps presentation, timing, and primitive-specific code separate. An adapter may also return an untimed `ExperimentObservation`; protocol adapters use it for actual message lengths and transcript events so visualization bookkeeping cannot distort latency samples.
 
 ## What one sample measures
 
@@ -26,7 +26,7 @@ The UI never calls a cryptographic crate directly. Every runnable entry implemen
 - Password KDFs: derive a key with fixed, recorded memory/time parameters and validate official vectors in tests.
 - Signatures: generate a keypair, sign 1 KiB, and verify the signature.
 - Experimental hybrids: complete both key-establishment components, combine them with domain-separated HKDF, and compare both parties' output.
-- Protocol handshakes: complete every handshake flight, enter transport mode, encrypt a 1 KiB payload, decrypt it, and compare the plaintext.
+- Protocol handshakes: complete every handshake flight, enter transport mode, exchange encrypted 1 KiB payloads in both directions, and compare both plaintexts.
 
 Operations from different categories are not comparable. Results only describe this machine, build, dependency set, and measurement definition. Every JSON result records the category, maturity, workload, actual sample count, and a learner-facing tradeoff profile.
 

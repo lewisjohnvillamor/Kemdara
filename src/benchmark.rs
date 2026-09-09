@@ -3,7 +3,10 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 
 use crate::{
-    algorithms::{ExperimentCategory, Maturity, TradeoffProfile, registry, tradeoff_for},
+    algorithms::{
+        ExperimentCategory, ExperimentObservation, Maturity, TradeoffProfile, registry,
+        tradeoff_for,
+    },
     platform::MachineMetadata,
 };
 
@@ -29,6 +32,8 @@ pub struct BenchmarkMeasurement {
     pub workload: &'static str,
     pub summary: &'static str,
     pub tradeoffs: TradeoffProfile,
+    /// Untimed wire/transcript metadata collected after the timing samples.
+    pub observation: ExperimentObservation,
     pub iterations: usize,
     pub successful: bool,
     pub mean_ns: u128,
@@ -68,6 +73,17 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
         }
 
         durations.sort_unstable();
+        let observation = if error.is_none() {
+            match algorithm.observe() {
+                Ok(observation) => observation,
+                Err(observation_error) => {
+                    error = Some(format!("observation failed: {observation_error}"));
+                    ExperimentObservation::default()
+                }
+            }
+        } else {
+            ExperimentObservation::default()
+        };
         let successful = error.is_none() && durations.len() == experiment_iterations;
         let mean_ns = if durations.is_empty() {
             0
@@ -101,6 +117,7 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
             workload: info.workload,
             summary: info.summary,
             tradeoffs: tradeoff_for(info.id),
+            observation,
             iterations: experiment_iterations,
             successful,
             mean_ns,
@@ -116,7 +133,7 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
     }
 
     BenchmarkReport {
-        schema_version: 4,
+        schema_version: 5,
         generated_unix_ms: SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()

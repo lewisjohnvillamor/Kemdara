@@ -5,7 +5,8 @@ pub mod benchmark;
 pub mod platform;
 
 pub use algorithms::{
-    AlgorithmInfo, CryptoExperiment, EstablishmentAlgorithm, ExperimentCategory, Maturity,
-    TradeoffProfile, registry, tradeoff_for,
+    AlgorithmInfo, CryptoExperiment, EstablishmentAlgorithm, ExperimentCategory,
+    ExperimentObservation, Maturity, ProtocolTrace, TradeoffProfile, TranscriptEvent, registry,
+    tradeoff_for,
 };
 pub use benchmark::{BenchmarkMeasurement, BenchmarkReport, run_benchmarks};

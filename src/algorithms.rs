@@ -34,6 +34,42 @@ pub use tradeoffs::{TradeoffProfile, tradeoff_for};
 
 use serde::Serialize;
 
+#[derive(Clone, Debug, Default, Serialize)]
+pub struct ExperimentObservation {
+    /// Bytes emitted by the complete measured workload, when the adapter can observe them.
+    pub total_wire_bytes: Option<usize>,
+    /// Application bytes carried inside the measured workload.
+    pub application_payload_bytes: Option<usize>,
+    /// A protocol-level trace. Primitive adapters leave this empty.
+    pub protocol: Option<ProtocolTrace>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct ProtocolTrace {
+    pub pattern: &'static str,
+    pub handshake_messages: usize,
+    pub transport_messages: usize,
+    pub handshake_wire_bytes: usize,
+    pub transport_wire_bytes: usize,
+    pub application_payload_bytes: usize,
+    pub total_wire_bytes: usize,
+    pub expansion_bytes: usize,
+    pub authentication: &'static str,
+    pub forward_secrecy: &'static str,
+    pub identity_exposure: &'static str,
+    pub events: Vec<TranscriptEvent>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct TranscriptEvent {
+    pub flight: usize,
+    pub direction: &'static str,
+    pub phase: &'static str,
+    pub tokens: &'static str,
+    pub wire_bytes: usize,
+    pub security_state: &'static str,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ExperimentCategory {
@@ -100,6 +136,14 @@ pub trait CryptoExperiment: Sync {
 
     /// Run the complete workload and perform its category-specific correctness check.
     fn run_once(&self) -> Result<(), String>;
+
+    /// Collect deterministic, untimed metadata for a successful workload.
+    ///
+    /// Keeping observation outside the timing loop prevents transcript allocation and
+    /// presentation bookkeeping from distorting the cryptographic measurement.
+    fn observe(&self) -> Result<ExperimentObservation, String> {
+        Ok(ExperimentObservation::default())
+    }
 }
 
 /// Backward-compatible name for the original adapter boundary.

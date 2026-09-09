@@ -15,8 +15,10 @@ These scenarios are executable study material, not audited production releases. 
 
 The first implemented protocol scenarios are:
 
-- `Noise_NN_25519_ChaChaPoly_BLAKE2s`: two handshake messages and one encrypted 1 KiB transport message. It is intentionally unauthenticated.
-- `Noise_XX_25519_ChaChaPoly_BLAKE2s`: three handshake messages, static-key exchange and verification, and one encrypted 1 KiB transport message. It provides mutual static-key authentication, but the application still decides whether those keys are trusted.
+- `Noise_NN_25519_ChaChaPoly_BLAKE2s`: two handshake messages and encrypted 1 KiB messages in both directions. It is intentionally unauthenticated.
+- `Noise_XX_25519_ChaChaPoly_BLAKE2s`: three handshake messages, static-key exchange and verification, and encrypted 1 KiB messages in both directions. It provides mutual static-key-possession authentication, but the application still decides whether those keys are trusted.
+
+The runner records every emitted message length and builds an untimed transcript after sampling. This keeps timeline allocation out of the latency measurement while making handshake bytes, transport bytes, ciphertext expansion, and the security state after each flight visible in both JSON and the GUI.
 
 Both are marked `experimental` because Kemdara's current Rust Noise provider states that it has not received a formal audit. The protocol pattern may be stable while implementation assurance remains a separate question.
 
