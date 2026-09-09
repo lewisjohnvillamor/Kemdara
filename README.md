@@ -8,6 +8,14 @@ Kemdara does not answer “which algorithm is best?” Every choice has a worklo
 
 Its intended niche is a **cryptography tradeoff laboratory**: the breadth of specialist suites, the approachability of an interactive teaching tool, and enough protocol context to show what a primitive actually buys when it becomes part of a system. Kemdara reuses established implementations and evidence; it does not compete with them or invent a new production wire protocol.
 
+## Why use Kemdara?
+
+- **Students** can move from “this algorithm is fast” to seeing the operation, message flow, byte cost, security properties, and failure behavior that make the number meaningful.
+- **Engineers** can reproduce the same workload on their own hardware, inspect timing noise, and compare deployment-shaped tradeoffs without relying on a universal ranking.
+- **Researchers and implementers** can add an isolated adapter, attach evidence and caveats, and let other people reproduce an observation without merging a new cryptographic primitive into Kemdara itself.
+
+The desired first-run experience is: download a packaged app, choose **Learn**, **Compare**, or **Contribute**, run a guided sample, and export a self-describing result bundle. The repository is not there yet—source builds and JSON export work today; packaged releases, import, annotations, and guided modes are roadmap items. That limitation is explicit so early contributors know where help is valuable.
+
 Executable adapters are grouped by workload:
 
 - Key establishment: X25519, X448, P-256 ECDH, and ML-KEM-512/768/1024
@@ -151,13 +159,19 @@ The ordering is deliberate: trustworthy measurements come before controls and co
 | --- | --- | --- | --- |
 | P0 | Observation contract: transcript and wire size | Makes protocol costs inspectable and gives later modules one versioned data model | First Noise slice implemented |
 | P0 | Peak tracked heap and allocation counts | Adds a reproducible memory view without pretending noisy whole-process RSS is algorithm memory | Next |
-| P1 | Scenario composer | Lets learners change payload, pattern, authentication goal, and network assumptions against the same runner | Planned |
-| P1 | Safe failure laboratory | Demonstrates corruption, replay, nonce reuse, truncation, reordering, and downgrade behavior without exposing reusable attack tooling | Planned |
-| P2 | Windows-versus-Mac report import and comparison | Makes local hardware and implementation tradeoffs visible after the schema is stable | Planned |
+| P0.5 | Packaged apps and guided first run | Removes the Rust-toolchain barrier and gives each audience an obvious starting path | Planned |
+| P1 | Result import, comparison, sharing, and annotations | Turns isolated runs into reproducible conversations while preserving provenance and caveats | Planned |
+| P1 | Scenario composer and safe failure lab | Lets learners vary supported inputs and observe fixed corruption, replay, nonce, and downgrade demonstrations | Planned |
 | P2 | Upstream evidence importers | Links local observations to Wycheproof, Noise Explorer, liboqs, and SUPERCOP without duplicating their work | Planned |
 | P3 | More protocol scenarios | Noise NK/IK, HPKE, TLS 1.3, then carefully scoped MLS scenarios | Planned |
 
 Two cross-cutting requirements apply to every phase: the GUI and JSON must show the exact workload, and failure/correctness evidence must never be presented as a security proof. See [docs/ROADMAP.md](docs/ROADMAP.md) for acceptance criteria.
+
+## Contributing results
+
+Today, contributors can generate a versioned JSON report with the headless command and attach it to a GitHub issue or research note. Kemdara does not yet maintain a canonical public result corpus, because accepting numbers without workload compatibility, provenance, build metadata, and noise checks would create a misleading leaderboard.
+
+The planned contribution flow validates a report locally, previews exactly what machine metadata will be shared, compares only compatible workload fingerprints, and stores commentary as a separate attributed annotation rather than changing the measurement. See [docs/RESULTS_AND_ANNOTATIONS.md](docs/RESULTS_AND_ANNOTATIONS.md).
 
 ## License
 

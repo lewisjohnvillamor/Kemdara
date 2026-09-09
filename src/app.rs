@@ -406,9 +406,7 @@ fn protocol_trace_view(ui: &mut egui::Ui, algorithm_id: &str, trace: &ProtocolTr
                 ui.colored_label(ACCENT, "Wire cost");
                 ui.label(format!(
                     "{} B handshake + {} B transport = {} B total",
-                    trace.handshake_wire_bytes,
-                    trace.transport_wire_bytes,
-                    trace.total_wire_bytes
+                    trace.handshake_wire_bytes, trace.transport_wire_bytes, trace.total_wire_bytes
                 ));
                 ui.end_row();
                 ui.colored_label(ACCENT, "Expansion");
@@ -462,11 +460,7 @@ fn protocol_trace_view(ui: &mut egui::Ui, algorithm_id: &str, trace: &ProtocolTr
                 )
                 .on_hover_text(event.security_state);
             });
-            ui.label(
-                RichText::new(event.security_state)
-                    .small()
-                    .color(MUTED),
-            );
+            ui.label(RichText::new(event.security_state).small().color(MUTED));
         }
     });
 }

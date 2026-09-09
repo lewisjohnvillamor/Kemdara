@@ -238,8 +238,14 @@ fn protocol_trace<const N: usize>(
     identity_exposure: &'static str,
     events: [TranscriptEvent; N],
 ) -> ProtocolTrace {
-    let handshake_messages = events.iter().filter(|event| event.phase == "handshake").count();
-    let transport_messages = events.iter().filter(|event| event.phase == "transport").count();
+    let handshake_messages = events
+        .iter()
+        .filter(|event| event.phase == "handshake")
+        .count();
+    let transport_messages = events
+        .iter()
+        .filter(|event| event.phase == "transport")
+        .count();
     let handshake_wire_bytes = events
         .iter()
         .filter(|event| event.phase == "handshake")
