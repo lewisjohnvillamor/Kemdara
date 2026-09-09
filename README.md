@@ -1,6 +1,6 @@
 # Kemdara
 
-A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. It is intentionally **not** a production protocol implementation.
+A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. The executable today is the **lab track**, not a production protocol implementation. A separate, gated production track is defined in [docs/PRODUCTION_PROTOCOL.md](docs/PRODUCTION_PROTOCOL.md).
 
 Executable adapters are grouped by workload:
 
@@ -41,11 +41,14 @@ cargo run --release
 
 The first build downloads and compiles the dependencies.
 
+Kemdara currently has a native desktop GUI, not a hosted web interface. A browser build is possible later, but native execution is the trustworthy baseline for local CPU measurements because it avoids browser scheduling and WebAssembly differences.
+
 The first usable baseline includes:
 
 - a native `egui`/`eframe` desktop interface (no browser or server required)
 - background benchmark execution so the window remains responsive
-- mean, median, P95, and operations-per-second measurements
+- mean, median, P95, min/max, standard deviation, coefficient-of-variation noise, and operations-per-second measurements
+- category-normalized latency bars with median/P95 markers and detailed hover readouts
 - clear classical vs post-quantum labeling
 - a versioned JSON format for comparing machines later
 

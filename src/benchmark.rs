@@ -32,6 +32,11 @@ pub struct BenchmarkMeasurement {
     pub mean_ns: u128,
     pub median_ns: u128,
     pub p95_ns: u128,
+    pub min_ns: u128,
+    pub max_ns: u128,
+    pub standard_deviation_ns: u128,
+    /// Relative timing variation. Lower is quieter; compare only like workloads.
+    pub coefficient_of_variation_percent: f64,
     pub operations_per_second: f64,
     pub error: Option<String>,
 }
@@ -69,6 +74,14 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
         };
         let median_ns = percentile(&durations, 0.50);
         let p95_ns = percentile(&durations, 0.95);
+        let min_ns = durations.first().copied().unwrap_or_default();
+        let max_ns = durations.last().copied().unwrap_or_default();
+        let standard_deviation_ns = standard_deviation(&durations, mean_ns);
+        let coefficient_of_variation_percent = if mean_ns == 0 {
+            0.0
+        } else {
+            standard_deviation_ns as f64 / mean_ns as f64 * 100.0
+        };
         let operations_per_second = if mean_ns == 0 {
             0.0
         } else {
@@ -89,13 +102,17 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
             mean_ns,
             median_ns,
             p95_ns,
+            min_ns,
+            max_ns,
+            standard_deviation_ns,
+            coefficient_of_variation_percent,
             operations_per_second,
             error,
         });
     }
 
     BenchmarkReport {
-        schema_version: 2,
+        schema_version: 3,
         generated_unix_ms: SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
@@ -105,6 +122,23 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
         iterations,
         results,
     }
+}
+
+fn standard_deviation(samples: &[u128], mean: u128) -> u128 {
+    if samples.len() < 2 {
+        return 0;
+    }
+
+    let mean = mean as f64;
+    let variance = samples
+        .iter()
+        .map(|sample| {
+            let difference = *sample as f64 - mean;
+            difference * difference
+        })
+        .sum::<f64>()
+        / samples.len() as f64;
+    variance.sqrt().round() as u128
 }
 
 fn percentile(sorted: &[u128], percentile: f64) -> u128 {
@@ -117,7 +151,7 @@ fn percentile(sorted: &[u128], percentile: f64) -> u128 {
 
 #[cfg(test)]
 mod tests {
-    use super::percentile;
+    use super::{percentile, standard_deviation};
 
     #[test]
     fn percentile_handles_empty_and_ordered_samples() {
@@ -125,5 +159,12 @@ mod tests {
         assert_eq!(percentile(&[10], 0.95), 10);
         assert_eq!(percentile(&[10, 20, 30, 40, 50], 0.50), 30);
         assert_eq!(percentile(&[10, 20, 30, 40, 50], 0.95), 50);
+    }
+
+    #[test]
+    fn standard_deviation_handles_sparse_and_variable_samples() {
+        assert_eq!(standard_deviation(&[], 0), 0);
+        assert_eq!(standard_deviation(&[10], 10), 0);
+        assert_eq!(standard_deviation(&[10, 20, 30], 20), 8);
     }
 }

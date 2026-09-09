@@ -15,7 +15,9 @@ categories = ["cryptography", "development-tools"]
 aes-gcm = "0.11.1"
 aes-gcm-siv = "0.12.1"
 argon2 = "0.6.0"
-ascon-aead128 = "0.1.1"
+# 0.1.1 was published against an Ascon release-candidate API. Pin the upstream
+# compatibility fix until the next crates.io release includes it.
+ascon-aead128 = { git = "https://github.com/RustCrypto/AEADs", rev = "677cf651adcf22321d57c46e52f67afc36d36014" }
 ascon-hash256 = "0.1.0"
 ascon-xof128 = "0.2.1"
 blake2 = "0.11.0"

@@ -58,3 +58,5 @@ Passing the ladder is research evidence, not a claim that a custom construction 
 Catalog-only candidates live in `exploration/candidates.json`; the executable never loads this file. Promotion into `registry()` requires the admission gate in `docs/EXPLORATION.md`.
 
 Do not mix experimental outputs into production traffic, do not invent performance claims from one machine, and do not call a construction secure because it passes correctness tests.
+
+The separate production-track boundary and admission gates are described in [PRODUCTION_PROTOCOL.md](PRODUCTION_PROTOCOL.md).

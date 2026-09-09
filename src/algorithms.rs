@@ -9,21 +9,21 @@ use x25519_dalek::{EphemeralSecret as X25519Secret, PublicKey as X25519PublicKey
 
 mod digest;
 mod hybrid;
-mod payload;
 mod password;
+mod payload;
 mod signatures;
 
 use self::{
     digest::{
-        ASCON_HASH256, ASCON_XOF128, BLAKE2S, BLAKE3, HKDF_SHA256, KANGAROO_TWELVE,
-        SHA3_256, SHA256, SHA384,
+        ASCON_HASH256, ASCON_XOF128, BLAKE2S, BLAKE3, HKDF_SHA256, KANGAROO_TWELVE, SHA3_256,
+        SHA256, SHA384,
     },
     hybrid::{P256_MLKEM768, X25519_MLKEM768},
+    password::{ARGON2ID, SCRYPT},
     payload::{
         AES128_GCM, AES256_GCM, AES256_GCM_SIV, ASCON_AEAD128, CHACHA20_POLY1305,
         XCHACHA20_POLY1305,
     },
-    password::{ARGON2ID, SCRYPT},
     signatures::{ED25519, MLDSA44, MLDSA65, MLDSA87, P256_ECDSA, SLHDSA_SHAKE128F},
 };
 

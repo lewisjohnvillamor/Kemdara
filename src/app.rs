@@ -219,6 +219,13 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
         }
     });
     ui.add_space(12.0);
+    ui.horizontal_wrapped(|ui| {
+        ui.colored_label(ACCENT, "■ classical/interoperable");
+        ui.colored_label(PQ_ACCENT, "■ post-quantum");
+        ui.colored_label(Color32::from_rgb(232, 174, 92), "■ experimental");
+        ui.label(RichText::new("bar = mean · ticks = median / P95").color(MUTED));
+    });
+    ui.add_space(8.0);
 
     const CATEGORIES: [ExperimentCategory; 7] = [
         ExperimentCategory::KeyEstablishment,
@@ -239,9 +246,9 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
         if category_results.is_empty() {
             continue;
         }
-        let max_mean = category_results
+        let max_latency = category_results
             .iter()
-            .map(|result| result.mean_ns)
+            .map(|result| result.p95_ns.max(result.mean_ns))
             .max()
             .unwrap_or(1)
             .max(1);
@@ -261,16 +268,37 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                     egui::Label::new(RichText::new(result.algorithm).strong()),
                 );
                 let width = (ui.available_width() - 275.0).max(40.0);
-                let fraction = result.mean_ns as f32 / max_mean as f32;
-                let (rect, _) =
-                    ui.allocate_exact_size(egui::vec2(width, 14.0), egui::Sense::hover());
+                let mean_fraction = result.mean_ns as f32 / max_latency as f32;
+                let median_fraction = result.median_ns as f32 / max_latency as f32;
+                let p95_fraction = result.p95_ns as f32 / max_latency as f32;
+                let (rect, response) =
+                    ui.allocate_exact_size(egui::vec2(width, 16.0), egui::Sense::hover());
                 ui.painter()
                     .rect_filled(rect, 0.0, Color32::from_rgb(38, 47, 58));
                 let filled = egui::Rect::from_min_size(
                     rect.min,
-                    egui::vec2(width * fraction, rect.height()),
+                    egui::vec2(width * mean_fraction, rect.height()),
                 );
                 ui.painter().rect_filled(filled, 0.0, color);
+                for (fraction, marker_color) in [
+                    (median_fraction, Color32::WHITE),
+                    (p95_fraction, Color32::from_rgb(235, 104, 104)),
+                ] {
+                    let x = rect.left() + width * fraction;
+                    ui.painter().line_segment(
+                        [egui::pos2(x, rect.top()), egui::pos2(x, rect.bottom())],
+                        Stroke::new(1.5, marker_color),
+                    );
+                }
+                response.on_hover_text(format!(
+                    "mean {}\nmedian {}\nP95 {}\nrange {}–{}\nnoise CV {:.1}%",
+                    format_duration(result.mean_ns),
+                    format_duration(result.median_ns),
+                    format_duration(result.p95_ns),
+                    format_duration(result.min_ns),
+                    format_duration(result.max_ns),
+                    result.coefficient_of_variation_percent
+                ));
                 ui.label(format_duration(result.mean_ns));
                 ui.colored_label(
                     if result.successful {
@@ -301,21 +329,25 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
 
     ui.add_space(10.0);
     egui::Grid::new("result_table")
-        .num_columns(6)
+        .num_columns(8)
         .spacing([24.0, 8.0])
         .striped(true)
         .show(ui, |ui| {
             ui.strong("Algorithm");
+            ui.strong("Mean");
             ui.strong("Median");
             ui.strong("P95");
+            ui.strong("Noise CV");
             ui.strong("Ops/sec");
             ui.strong("Samples");
             ui.strong("Standard");
             ui.end_row();
             for result in &report.results {
                 ui.label(result.algorithm);
+                ui.label(format_duration(result.mean_ns));
                 ui.label(format_duration(result.median_ns));
                 ui.label(format_duration(result.p95_ns));
+                ui.label(format!("{:.1}%", result.coefficient_of_variation_percent));
                 ui.label(format!("{:.1}", result.operations_per_second));
                 ui.label(result.iterations.to_string());
                 ui.label(result.standard);
