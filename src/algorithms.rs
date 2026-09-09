@@ -11,7 +11,9 @@ mod digest;
 mod hybrid;
 mod password;
 mod payload;
+mod protocol;
 mod signatures;
+mod tradeoffs;
 
 use self::{
     digest::{
@@ -24,8 +26,11 @@ use self::{
         AES128_GCM, AES256_GCM, AES256_GCM_SIV, ASCON_AEAD128, CHACHA20_POLY1305,
         XCHACHA20_POLY1305,
     },
+    protocol::{NOISE_NN, NOISE_XX},
     signatures::{ED25519, MLDSA44, MLDSA65, MLDSA87, P256_ECDSA, SLHDSA_SHAKE128F},
 };
+
+pub use tradeoffs::{TradeoffProfile, tradeoff_for};
 
 use serde::Serialize;
 
@@ -39,6 +44,7 @@ pub enum ExperimentCategory {
     PasswordDerivation,
     DigitalSignature,
     HybridKeyEstablishment,
+    ProtocolHandshake,
 }
 
 impl ExperimentCategory {
@@ -51,6 +57,7 @@ impl ExperimentCategory {
             Self::PasswordDerivation => "Password derivation",
             Self::DigitalSignature => "Digital signature",
             Self::HybridKeyEstablishment => "Hybrid key establishment",
+            Self::ProtocolHandshake => "Protocol handshake",
         }
     }
 }
@@ -145,6 +152,8 @@ pub fn registry() -> Vec<&'static dyn CryptoExperiment> {
         &SLHDSA_SHAKE128F,
         &X25519_MLKEM768,
         &P256_MLKEM768,
+        &NOISE_NN,
+        &NOISE_XX,
     ]
 }
 

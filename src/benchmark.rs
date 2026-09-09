@@ -3,7 +3,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 
 use crate::{
-    algorithms::{ExperimentCategory, Maturity, registry},
+    algorithms::{ExperimentCategory, Maturity, TradeoffProfile, registry, tradeoff_for},
     platform::MachineMetadata,
 };
 
@@ -27,6 +27,8 @@ pub struct BenchmarkMeasurement {
     pub category: ExperimentCategory,
     pub maturity: Maturity,
     pub workload: &'static str,
+    pub summary: &'static str,
+    pub tradeoffs: TradeoffProfile,
     pub iterations: usize,
     pub successful: bool,
     pub mean_ns: u128,
@@ -97,6 +99,8 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
             category: info.category,
             maturity: info.maturity,
             workload: info.workload,
+            summary: info.summary,
+            tradeoffs: tradeoff_for(info.id),
             iterations: experiment_iterations,
             successful,
             mean_ns,
@@ -112,7 +116,7 @@ pub fn run_benchmarks(iterations: usize) -> BenchmarkReport {
     }
 
     BenchmarkReport {
-        schema_version: 3,
+        schema_version: 4,
         generated_unix_ms: SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()

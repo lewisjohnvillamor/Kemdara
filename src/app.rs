@@ -227,7 +227,7 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
     });
     ui.add_space(8.0);
 
-    const CATEGORIES: [ExperimentCategory; 7] = [
+    const CATEGORIES: [ExperimentCategory; 8] = [
         ExperimentCategory::KeyEstablishment,
         ExperimentCategory::PayloadEncryption,
         ExperimentCategory::Hash,
@@ -235,6 +235,7 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
         ExperimentCategory::PasswordDerivation,
         ExperimentCategory::DigitalSignature,
         ExperimentCategory::HybridKeyEstablishment,
+        ExperimentCategory::ProtocolHandshake,
     ];
 
     for category in CATEGORIES {
@@ -323,6 +324,28 @@ fn report_view(ui: &mut egui::Ui, report: &BenchmarkReport) {
                 .color(MUTED)
                 .small(),
             );
+            ui.label(RichText::new(result.summary).color(INK).small());
+            egui::CollapsingHeader::new("Tradeoffs and best fit")
+                .id_salt(("tradeoffs", result.algorithm_id))
+                .show(ui, |ui| {
+                    egui::Grid::new(("tradeoff_grid", result.algorithm_id))
+                        .num_columns(2)
+                        .spacing([14.0, 5.0])
+                        .show(ui, |ui| {
+                            ui.colored_label(ACCENT, "Strength");
+                            ui.label(result.tradeoffs.strength);
+                            ui.end_row();
+                            ui.colored_label(Color32::from_rgb(232, 174, 92), "Cost");
+                            ui.label(result.tradeoffs.cost);
+                            ui.end_row();
+                            ui.colored_label(PQ_ACCENT, "Best fit");
+                            ui.label(result.tradeoffs.best_fit);
+                            ui.end_row();
+                            ui.colored_label(Color32::from_rgb(235, 104, 104), "Caveat");
+                            ui.label(result.tradeoffs.caveat);
+                            ui.end_row();
+                        });
+                });
             ui.add_space(5.0);
         }
     }

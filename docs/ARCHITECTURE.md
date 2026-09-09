@@ -26,8 +26,9 @@ The UI never calls a cryptographic crate directly. Every runnable entry implemen
 - Password KDFs: derive a key with fixed, recorded memory/time parameters and validate official vectors in tests.
 - Signatures: generate a keypair, sign 1 KiB, and verify the signature.
 - Experimental hybrids: complete both key-establishment components, combine them with domain-separated HKDF, and compare both parties' output.
+- Protocol handshakes: complete every handshake flight, enter transport mode, encrypt a 1 KiB payload, decrypt it, and compare the plaintext.
 
-Operations from different categories are not comparable. Results only describe this machine, build, dependency set, and measurement definition. Every JSON result records the category, maturity, workload, and actual sample count.
+Operations from different categories are not comparable. Results only describe this machine, build, dependency set, and measurement definition. Every JSON result records the category, maturity, workload, actual sample count, and a learner-facing tradeoff profile.
 
 ## Evidence ladder
 

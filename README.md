@@ -1,6 +1,8 @@
 # Kemdara
 
-A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. The executable today is the **lab track**, not a production protocol implementation. A separate, gated production track is defined in [docs/PRODUCTION_PROTOCOL.md](docs/PRODUCTION_PROTOCOL.md).
+A local, cross-platform cryptography experimentation workbench for **learning, verification, and benchmarking**. Kemdara runs real implementations and production-shaped protocol scenarios, but it is an educational lab rather than a production security claim. The protocol roadmap is defined in [docs/PRODUCTION_PROTOCOL.md](docs/PRODUCTION_PROTOCOL.md).
+
+Kemdara does not answer “which algorithm is best?” Every choice has a workload, security goal, compatibility boundary, and cost. Results are grouped only where the operations are meaningfully comparable, and each result includes an explicit strength, cost, best fit, and caveat.
 
 Executable adapters are grouped by workload:
 
@@ -10,6 +12,7 @@ Executable adapters are grouped by workload:
 - Password derivation: Argon2id and scrypt with explicit memory/work parameters
 - Signatures: Ed25519, ECDSA P-256, ML-DSA-44/65/87, and SLH-DSA-SHAKE-128f
 - Experimental hybrids: X25519 + ML-KEM-768 and P-256 + ML-KEM-768
+- Protocol scenarios: Noise NN and Noise XX with a complete handshake and encrypted transport round-trip
 
 The workbench runs the same code on Windows x86-64 and macOS (Intel or Apple Silicon), records machine metadata, verifies each complete workload, runs known-answer tests where available, and displays comparisons within each workload category.
 
@@ -49,6 +52,7 @@ The first usable baseline includes:
 - background benchmark execution so the window remains responsive
 - mean, median, P95, min/max, standard deviation, coefficient-of-variation noise, and operations-per-second measurements
 - category-normalized latency bars with median/P95 markers and detailed hover readouts
+- expandable learner-facing tradeoff cards for every runnable experiment
 - clear classical vs post-quantum labeling
 - a versioned JSON format for comparing machines later
 
@@ -104,6 +108,8 @@ Only compare results inside the same category. The global suite is not a ranking
 
 Implement `CryptoExperiment`, give it category and maturity metadata, define an honest complete workload, add a correctness path and preferably official vectors, then add it to `registry()`.
 
+The contributor walkthrough and adapter template are in [docs/ADDING_EXPERIMENT.md](docs/ADDING_EXPERIMENT.md). A custom algorithm is always labeled experimental; passing the common runner shows correctness and measurement behavior, not security.
+
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the adapter boundary, evidence ladder, and rules that keep experiments separate from production-safe claims.
 
 The intended future order is:
@@ -119,10 +125,22 @@ The intended future order is:
 
 Draft and not-yet-implemented candidates are tracked in [docs/EXPLORATION.md](docs/EXPLORATION.md) and [exploration/candidates.json](exploration/candidates.json). Being listed is not an endorsement and does not make a candidate runnable.
 
+## Reuse rather than recreate
+
+Kemdara is a presentation and integration workbench, not a replacement for specialist projects. Planned importers and adapters should reuse:
+
+- SUPERCOP/eBACS for broad implementation-performance data;
+- liboqs and pqm4 for post-quantum implementations and constrained targets;
+- Project Wycheproof and official standards vectors for negative/correctness testing;
+- Noise Explorer for formal handshake-pattern results;
+- Criterion-style statistical methods for stable local measurements.
+
+See [docs/ECOSYSTEM_GAPS.md](docs/ECOSYSTEM_GAPS.md) for the gap Kemdara is intended to fill.
+
 ## Next planned modules
 
 - Wycheproof importer
-- Noise-style handshake composer
+- TLS 1.3, HPKE, and additional Noise protocol scenarios
 - toy elliptic-curve visualizer
 - result comparison/import between machines
 - custom algorithm plugin folder

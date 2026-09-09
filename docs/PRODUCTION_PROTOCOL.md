@@ -1,68 +1,73 @@
-# Production protocol track
+# Protocol laboratory
 
-Kemdara Lab measures cryptographic workloads. Turning those adapters directly into a wire protocol would create an unnecessary security risk. The production track must instead profile an established protocol, use a reviewed implementation, and keep experimental suites outside the production dependency graph.
+Kemdara measures both individual primitives and production-shaped protocol scenarios. It deliberately reuses existing protocol specifications and libraries instead of inventing a new wire protocol.
 
-## Choose the product before the protocol
+These scenarios are executable study material, not audited production releases. Independent audits, certification, hosted infrastructure, and operational support are outside Kemdara's open-source learning scope. Downstream products can perform those steps if they choose to deploy a studied profile.
 
-| Product shape | Production baseline | Kemdara's role |
+## Protocols by purpose
+
+| Product shape | Established protocol | Kemdara scenario |
 | --- | --- | --- |
-| Client/server API or service transport | TLS 1.3 (RFC 8446) through `rustls` | Measure handshake, resumption, records, and failure behavior around the library |
-| Asynchronous encryption to one recipient | HPKE (RFC 9180) through a maintained interoperable implementation | Test profiles, vectors, envelope size, and misuse cases |
-| Group end-to-end messaging | MLS (RFC 9420), for example through OpenMLS | Measure group operations and validate application-level policies |
-| Custom two-party end-to-end channel | A fixed stable Noise pattern only after choosing an audited implementation and completing interoperability review | Visualize transcripts and measure network behavior; do not implement the handshake primitives in Kemdara |
+| Client/server API or service transport | TLS 1.3 (RFC 8446) | Full in-memory handshake, authentication, application records, resumption, and failure cases |
+| Asynchronous encryption to one recipient | HPKE (RFC 9180) | Sender/recipient setup plus multiple message and parameter sizes |
+| Group end-to-end messaging | MLS (RFC 9420) | Group creation, add/remove/update, commit size, and epoch transition costs |
+| Custom two-party end-to-end channel | Stable Noise revision 34 patterns | Compare message count, authentication knowledge, identity exposure, wire bytes, and transport setup |
 
-The recommended first production target is a TLS 1.3 client/server channel. It has a standardized wire format, mature identity and certificate machinery, and an audited Rust implementation. A Noise channel is attractive for a tightly controlled peer-to-peer product, but the commonly used Rust `snow` implementation explicitly states that it has not received a formal audit; that blocks Kemdara from presenting it as the default production path.
+The first implemented protocol scenarios are:
+
+- `Noise_NN_25519_ChaChaPoly_BLAKE2s`: two handshake messages and one encrypted 1 KiB transport message. It is intentionally unauthenticated.
+- `Noise_XX_25519_ChaChaPoly_BLAKE2s`: three handshake messages, static-key exchange and verification, and one encrypted 1 KiB transport message. It provides mutual static-key authentication, but the application still decides whether those keys are trusted.
+
+Both are marked `experimental` because Kemdara's current Rust Noise provider states that it has not received a formal audit. The protocol pattern may be stable while implementation assurance remains a separate question.
 
 ## Required separation
 
 ```mermaid
 flowchart TD
-    App["Application API"] --> Protocol["Standard protocol profile"]
-    Protocol --> Provider["Reviewed protocol library"]
-    Provider --> OS["OS entropy and protected keys"]
-    Lab["Kemdara Lab"] -. measurements only .-> Protocol
-    Experiments["Experimental suites"] -. never linked .-> Lab
+    GUI["GUI and JSON"] --> Runner["Scenario runner"]
+    Runner --> Protocol["Existing protocol library"]
+    Protocol --> Primitives["Version-pinned primitives"]
+    Vectors["Vectors and formal results"] -. evidence .-> Runner
+    Custom["Learner experiment"] -. experimental label .-> Runner
 ```
 
-The production package must expose intent-level operations such as `connect`, `accept`, `send`, `receive`, `rotate_identity`, and `close`. It must not expose free-form choices of KEM, hash, signature, nonce, or handshake pattern. Algorithm agility belongs in a versioned protocol profile, not in user-controlled runtime settings.
+Primitive and protocol results must remain separate. A Noise XX result includes multiple DH operations, transcript hashing, AEAD work, key generation, and state transitions; comparing it directly with a single X25519 operation would be misleading.
 
-## Version 1 profile proposal
+## Scenario roadmap
 
-Start with one narrow service profile:
+1. Noise NN and XX: complete in-memory handshake and encrypted transport verification.
+2. Noise NK and IK: measure the latency/identity tradeoff when the responder's static key is known in advance.
+3. TLS 1.3: local client/server handshake, certificate verification, encrypted records, and explicit failure cases.
+4. HPKE: base and authenticated modes with recorded envelope sizes.
+5. MLS: group scenarios once a narrowly scoped, interoperable adapter is practical.
+6. Experimental hybrid/PQ protocol profiles only after their exact draft or standard is pinned.
 
-- TLS 1.3 only, backed by `rustls` and its supported cryptographic provider.
-- Mutual authentication when both peers are managed; server authentication plus an application credential otherwise.
-- No early data in version 1, avoiding replay-sensitive 0-RTT behavior.
-- Length-bounded application frames with explicit content type and protocol version.
-- Monotonic connection/session identifiers for observability, never reused as cryptographic nonces.
-- Private keys loaded through a keystore abstraction; no secret key is serialized into benchmark JSON or logs.
-- A fixed error taxonomy that does not reveal secret-dependent detail to a remote peer.
+## Evidence required for a Kemdara scenario
 
-Post-quantum and hybrid handshakes remain in the lab until an interoperable standards profile and suitable reviewed provider exist. They should be tested as a whole protocol transcript—not promoted because their component microbenchmarks pass.
+Kemdara does not require a costly independent audit before an educational adapter can be merged. It does require:
 
-## Production admission gates
+1. A precise public specification/profile and version, or a prominent `original experiment` label.
+2. A pinned reusable implementation; Kemdara must not rewrite the cryptographic primitive.
+3. A successful complete transcript or round-trip check.
+4. Negative tests for corrupt, truncated, reordered, replayed, or wrongly authenticated messages where applicable.
+5. Official vectors or cross-implementation transcripts when available.
+6. Explicit authentication, confidentiality, forward-secrecy, identity-hiding, and replay caveats.
+7. Cross-platform CI and a reproducible workload definition.
 
-1. Write a threat model covering peers, authentication, replay, compromise, metadata, denial of service, and recovery.
-2. Freeze the normative protocol/profile and wire-format references.
-3. Define identity enrollment, rotation, revocation, storage, backup, and device-loss behavior.
-4. Make downgrade, replay, nonce reuse, truncation, reordering, and malformed-frame tests mandatory.
-5. Pass official vectors and cross-implementation tests.
-6. Add state-machine property tests, coverage-guided fuzzing, dependency auditing, an SBOM, and reproducible release builds.
-7. Measure real network handshakes under latency, loss, reordering, concurrency, and large-message pressure.
-8. Commission an independent design review and implementation audit, resolve findings, and publish a security policy.
-9. Run a staged deployment with telemetry that contains no keys, plaintext, or peer-identifying secrets.
-10. Only then remove the experimental warning from that separate production package—not from Kemdara Lab.
+An audit can raise an implementation's evidence level later. Its absence must remain visible but does not prevent study.
 
 ## Visualizations that matter at protocol level
 
-Primitive latency bars are insufficient for a protocol. The protocol runner should add:
+- handshake timeline: message flights, CPU time, bytes, and the point where each identity becomes authenticated;
+- latency distribution: P50/P95/P99 rather than only a mean;
+- jitter/noise: coefficient of variation and min-to-max range;
+- throughput curve: message size versus MiB/s;
+- network sensitivity: round-trip delay and packet loss versus completion time/failure rate;
+- resource profile: peak memory, allocations, key sizes, ciphertext expansion, and total wire bytes;
+- security-state view: confidentiality, authentication, forward secrecy, and replay exposure at every flight.
 
-- handshake timeline: per-flight CPU time, network wait, bytes, and authentication point;
-- latency distribution: P50/P95/P99 across repeated connections, not only a mean;
-- jitter/noise view: coefficient of variation and min-to-max range with warm-up clearly excluded;
-- throughput curves: message size versus MiB/s, with confidence intervals;
-- network sensitivity: heatmap of round-trip time and packet loss versus completion time/failure rate;
-- resource view: peak memory, allocations, wire bytes, and key/ciphertext/signature sizes;
-- security-state view: when peer identity is authenticated and when forward secrecy is established.
+These measurements belong in versioned JSON with the machine, compiler, implementation version, profile, build flags, and actual sample count.
 
-These metrics belong in the same versioned JSON model as machine, build, provider, profile, and exact sample count so comparisons remain reproducible.
+## If someone deploys a scenario
+
+Deployment is a separate downstream responsibility. At minimum it needs a concrete threat model, identity enrollment and recovery, secure key storage, protocol versioning, replay/downgrade handling, fuzzing, dependency response, reproducible releases, and external review appropriate to its risk. Kemdara will not display a “production secure” badge based on benchmark or round-trip success.
